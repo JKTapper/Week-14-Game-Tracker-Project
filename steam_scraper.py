@@ -1,9 +1,16 @@
+"""
+Scrapes the steam website for the 5 most recently released
+PC games and stores all scraped games in a json
+"""
 import json
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 
 
 def get_html(url):
+    """
+    Gets the html content of the webpage at a given url
+    """
     with urlopen(url) as page:
         html_bytes = page.read()
         html = html_bytes.decode("utf_8")
@@ -11,6 +18,9 @@ def get_html(url):
 
 
 def parse_games_bs(html):
+    """
+    Extracts the games from the steam website
+    """
     games = []
     soup = BeautifulSoup(html, "html.parser")
     a_tags = soup.find_all('a')
@@ -29,15 +39,17 @@ def parse_games_bs(html):
     return games
 
 
+STEAM_URL = "https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english"
+
+
 if __name__ == "__main__":
-    with open("steamgames.json", 'r') as game_file:
+    with open("steamgames.json", 'r', encoding='utf-8') as game_file:
         existing_games = json.load(game_file)
-    steam_url = "https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english"
-    steam_html = get_html(steam_url)
+    steam_html = get_html(STEAM_URL)
     scraped_games = parse_games_bs(steam_html)[0:5]
     new_games = [
-        game for game in scraped_games if game not in existing_games]
-    games = existing_games + new_games
-    print(games)
-    with open("steamgames.json", 'w') as game_file:
-        json.dump(games, game_file)
+        new_game for new_game in scraped_games if new_game not in existing_games]
+    all_games = existing_games + new_games
+    print(all_games)
+    with open("steamgames.json", 'w', encoding='utf-8') as game_file:
+        json.dump(all_games, game_file)
