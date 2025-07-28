@@ -10,3 +10,5 @@ Pygments==2.19.2
 pylint==3.3.7
 pytest==8.4.1
 tomlkit==0.13.3
+bs4
+requests
