@@ -7,12 +7,13 @@ BUCKET = 'c18-game-tracker-s3'
 S3_PATH = f"s3://{BUCKET}/input/"
 
 
-def get_session():
+def get_session() -> boto3.Session:
     '''Creates session with credentials in environment'''
     session = boto3.Session()
     creds = session.get_credentials()
     if creds is None:
         raise RuntimeError("Error: AWS credentials not found.")
+    return session
 
 
 def add_time_partitioning(data: list[dict[str]]) -> pd.DataFrame:
@@ -35,3 +36,4 @@ def upload_to_s3(df: pd.DataFrame):
         mode="append",
         partition_cols=["year", "month", "day"]
     )
+    print(f"Uploaded to {S3_PATH}")
