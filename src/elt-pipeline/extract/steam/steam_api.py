@@ -37,12 +37,14 @@ def get_steam_game_details(app_id: int) -> dict[str]:
                 game_data = data[str(app_id)]['data']
                 return {
                     'app_id': app_id,
-                    'name': game_data.get('name'),
-                    'genres': [genre['description'] for genre in game_data.get('genres', [])],
-                    'developers': game_data.get('developers', []),
                     'publishers': game_data.get('publishers', []),
-                    'release_date': game_data.get('release_date', {}).get('date'),
-                    'is_free': game_data.get('is_free', False)}
+                    'developers': game_data.get('developers', []),
+                    'description': game_data.get('short_description'),
+                    'requirements': game_data.get('pc_requirements'),
+                    'is_free': game_data.get('is_free', False),
+                    'price': game_data.get('price_overview', {}).get('final'),
+                    'genres': [genre['description'] for genre in game_data.get('genres', [])],
+                }
             return {'app_id': app_id, 'error': 'Data not found or incomplete'}
         return {'app_id': app_id,
                 'error': f"HTTP error {response.status_code}: {response.reason}"}
