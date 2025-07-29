@@ -56,12 +56,18 @@ def get_reference_data(raw_data: pd.DataFrame, table_name: str) -> pd.DataFrame:
     }
 
 
-def get_assignment_table(main_table: pd.DataFrame,
-                         reference_table: pd.DataFrame,
-                         main_table_name: str,
-                         reference_table_name: str):
+def iterrows_dict(df: pd.DataFrame) -> dict:
+    columns = list(df.columns)
+    for row in df.itertuples(index=False):
+        yield {columns[i]: row[i] for i in range(len(columns))}
+
+
+def get_assignment_df(main_table: pd.DataFrame,
+                      reference_table: pd.DataFrame,
+                      main_table_name: str,
+                      reference_table_name: str):
     assignment_table_rows = []
-    for row in main_table.iterrows():
+    for row in iterrows_dict(main_table):
         for item in row[reference_table_name + 's']:
             assignment_table_rows.append(
                 pd.DataFrame({
@@ -76,6 +82,7 @@ def get_assignment_table(main_table: pd.DataFrame,
         how='inner',
         on=reference_table_name+'_name'
     )
+    return assignment_table.drop([reference_table_name + '_name'], axis=1)
 
 
 def transform_s3_steam_data():
