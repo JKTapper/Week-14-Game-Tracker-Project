@@ -7,6 +7,21 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 
 
+def get_existing_games(filename: str):
+    '''Returns list of games currently in json file'''
+    try:
+        with open(filename, 'r', encoding='utf-8') as game_file:
+            try:
+                existing_games = json.load(game_file)
+            except json.JSONDecodeError:  # empty file
+                print("Warning: file empty. Creating empty list.")
+                existing_games = []
+    except FileNotFoundError:
+        print(f"{filename} not found. Creating empty list.")
+        existing_games = []
+    return existing_games
+
+
 def get_html(url):
     """
     Gets the html content of the webpage at a given url
@@ -43,8 +58,8 @@ STEAM_URL = "https://store.steampowered.com/search/?sort_by=Released_DESC&suppor
 
 
 if __name__ == "__main__":
-    with open("steamgames.json", 'r', encoding='utf-8') as game_file:
-        existing_games = json.load(game_file)
+    existing_games = get_existing_games('steamgames.json')
+
     steam_html = get_html(STEAM_URL)
     scraped_games = parse_games_bs(steam_html)[0:5]
     new_games = [
