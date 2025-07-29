@@ -12,14 +12,16 @@ DROP TABLE IF EXISTS developer;
 
 -- Create publisher
 CREATE TABLE publisher (
-    publisher_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    publisher_name TEXT NOT NULL UNIQUE
+    publisher_id INT,
+    publisher_name TEXT NOT NULL UNIQUE,
+    PRIMARY KEY (publisher_id)
 );
 
 -- Create developer
 CREATE TABLE developer (
-    developer_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    developer_name TEXT NOT NULL UNIQUE
+    developer_id INT,
+    developer_name TEXT NOT NULL UNIQUE,
+    PRIMARY KEY (developer_id)
 );
 
 -- Create genre
