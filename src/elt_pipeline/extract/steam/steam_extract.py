@@ -110,8 +110,7 @@ if __name__ == "__main__":
     scraped_games = parse_games_bs(steam_html)[0:5]  # first 5 only
     new_games = [
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
-    print(new_games)
+    print(new_games, '\n')
 
     full_game_data = iterate_through_scraped_games(new_games)
-    print('/n/n')
     print(full_game_data)
