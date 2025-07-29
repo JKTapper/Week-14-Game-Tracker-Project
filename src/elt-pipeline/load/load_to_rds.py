@@ -34,13 +34,47 @@ def load_data_into_database(full_df: pd.DataFrame, drop_table: bool = False) -> 
     else:
         exists = "append"
 
+    publisher_df = full_df[["publisher"]].dropna().drop_duplicates()
+    developer_df = full_df[["developer"]].dropna().drop_duplicates()
+    genre_df = full_df[["genre"]].dropna().drop_duplicates()
+    stores_df = full_df[["store_name"]].dropna().drop_duplicates()
+    games_df = full_df[
+        [
+            "game_name", "app_id", "store_name", "release_date",
+            "game_description", "recent_reviews_summary",
+            "os_requirements", "storage_requirements", "price"
+        ]
+    ].drop_duplicates(subset=["app_id"])
+
+    assign_genres = (
+        full_df[["game_name", "genre"]]
+        .dropna()
+        .drop_duplicates()
+        .reset_index(drop=True)
+    )
+
+    assign_developers = (
+        full_df[["game_name", "developer"]]
+        .dropna()
+        .drop_duplicates()
+        .reset_index(drop=True)
+    )
+
+    assign_publishers = (
+        full_df[["game_name", "publisher"]]
+        .dropna()
+        .drop_duplicates()
+        .reset_index(drop=True)
+    )
+
 
 def main() -> None:
     #  Load dataframes from transform script
     #  Pass them to load_data_to_database()
 
-    full_df = ...
-    #  Gets dataframe from transform script
+    data = ...  #  From transform script
+
+    full_df = pd.DataFrame.from_records(data)
 
     load_data_into_database(full_df)
 
