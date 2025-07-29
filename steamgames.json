@@ -1,1 +1,182 @@
-[{"url": "https://store.steampowered.com/app/3358210/StormCore/?snr=1_7_7_230_150_1", "title": "StormCore", "release": "28 Jul, 2025"}, {"url": "https://store.steampowered.com/app/3753770/Irbet_Tong/?snr=1_7_7_230_150_1", "title": "Irbet Tong", "release": "28 Jul, 2025"}, {"url": "https://store.steampowered.com/app/3623480/Flipto/?snr=1_7_7_230_150_1", "title": "Flipto", "release": "28 Jul, 2025"}, {"url": "https://store.steampowered.com/app/3660210/Car_Mechanic_Simulator_2021__Police_DLC/?snr=1_7_7_230_150_1", "title": "Car Mechanic Simulator 2021 - Police DLC", "release": "28 Jul, 2025"}, {"url": "https://store.steampowered.com/app/3765230/Zombie_Ants_VR_Definitive_Edition/?snr=1_7_7_230_150_1", "title": "Zombie Ants VR: Definitive Edition", "release": "28 Jul, 2025"}]
+[
+  {
+    "url": "https://store.steampowered.com/app/3350290/Ravager__MoonFriendly_Edition/?snr=1_7_7_230_150_1",
+    "title": "Ravager - Moon-Friendly Edition",
+    "release": "28 Jul, 2025",
+    "app_id": 3350290,
+    "name": "Ravager - Moon-Friendly Edition",
+    "genres": [
+      "RPG",
+      "Early Access"
+    ],
+    "developers": [
+      "4MinuteWarning"
+    ],
+    "publishers": [
+      "4MinuteWarning"
+    ],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/3867110/Forgotten_Beginnings_A_New_Afterlife_Strategy_Guide/?snr=1_7_7_230_150_1",
+    "title": "Forgotten Beginnings: A New Afterlife Strategy Guide",
+    "release": "28 Jul, 2025",
+    "app_id": 3867110,
+    "name": "Forgotten Beginnings: A New Afterlife Strategy Guide",
+    "genres": [
+      "RPG"
+    ],
+    "developers": [
+      "james5272"
+    ],
+    "publishers": [],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/2114480/Scripted_Land/?snr=1_7_7_230_150_1",
+    "title": "Scripted Land",
+    "release": "28 Jul, 2025",
+    "app_id": 2114480,
+    "name": "Scripted Land",
+    "genres": [
+      "Indie",
+      "Simulation"
+    ],
+    "developers": [
+      "Hyakuren Soft"
+    ],
+    "publishers": [
+      "Hyakuren Soft"
+    ],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/3866980/Forgotten_Beginnings_A_New_Afterlife_Soundtrack/?snr=1_7_7_230_150_1",
+    "title": "Forgotten Beginnings: A New Afterlife Soundtrack",
+    "release": "28 Jul, 2025",
+    "app_id": 3866980,
+    "name": "Forgotten Beginnings: A New Afterlife Soundtrack",
+    "genres": [],
+    "developers": [
+      "james5272"
+    ],
+    "publishers": [
+      "james5272"
+    ],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/3803290/Tezcatlipoca_Artbook/?snr=1_7_7_230_150_1",
+    "title": "Tezcatlipoca Artbook",
+    "release": "28 Jul, 2025",
+    "app_id": 3803290,
+    "name": "Tezcatlipoca Artbook",
+    "genres": [
+      "Casual",
+      "Indie"
+    ],
+    "developers": [
+      "LuQui"
+    ],
+    "publishers": [],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/3900460/Super_10_Pin_Soundtrack/?snr=1_7_7_230_150_1",
+    "title": "Super 10 Pin Soundtrack",
+    "release": "28 Jul, 2025",
+    "app_id": 3900460,
+    "name": "Super 10 Pin Soundtrack",
+    "genres": [],
+    "developers": [
+      "Modus Interactive"
+    ],
+    "publishers": [],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/3855020/Dark_Sea/?snr=1_7_7_230_150_1",
+    "title": "Dark Sea Demo",
+    "release": "28 Jul, 2025",
+    "app_id": 3855020,
+    "name": "Dark Sea",
+    "genres": [
+      "Adventure",
+      "Indie",
+      "Simulation"
+    ],
+    "developers": [
+      "DarkSignal Studios"
+    ],
+    "publishers": [
+      "DarkSignal Studios"
+    ],
+    "release_date": "Coming soon",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/3543840/Super_Jigsaw_Puzzle_Generations__Forests/?snr=1_7_7_230_150_1",
+    "title": "Super Jigsaw Puzzle: Generations - Forests",
+    "release": "28 Jul, 2025",
+    "app_id": 3543840,
+    "name": "Super Jigsaw Puzzle: Generations - Forests",
+    "genres": [
+      "Casual",
+      "Indie",
+      "Strategy",
+      "Free To Play"
+    ],
+    "developers": [
+      "Flat Cat Games"
+    ],
+    "publishers": [
+      "Flat Cat Games"
+    ],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/3262310/Look_At_Me/?snr=1_7_7_230_150_1",
+    "title": "Look At Me",
+    "release": "28 Jul, 2025",
+    "app_id": 3262310,
+    "name": "Look At Me",
+    "genres": [
+      "Indie"
+    ],
+    "developers": [
+      "Silly Tiger"
+    ],
+    "publishers": [
+      "Silly Tiger"
+    ],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  },
+  {
+    "url": "https://store.steampowered.com/app/3496510/AI_Roommate_Life_with_an_Artificial_Companion/?snr=1_7_7_230_150_1",
+    "title": "AI Roommate: Life with an Artificial Companion",
+    "release": "28 Jul, 2025",
+    "app_id": 3496510,
+    "name": "AI Roommate: Life with an Artificial Companion",
+    "genres": [
+      "Casual",
+      "Simulation",
+      "Early Access"
+    ],
+    "developers": [
+      "Raetae Studios"
+    ],
+    "publishers": [
+      "Raetae Studios"
+    ],
+    "release_date": "28 Jul, 2025",
+    "is_free": false
+  }
+]
