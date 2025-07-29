@@ -17,10 +17,13 @@ DB_SCHEMA = os.getenv("DB_SCHEMA")
 
 
 def get_engine() -> engine:
-    """Connects to RDS instance"""
-    engine = create_engine(
-        f"mssql+pymssql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    """Connects to RDS Postgres instance"""
+    url = (
+        f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}"
+        f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
+    engine = create_engine(url, future=True)
+
     return engine
 
 
@@ -29,6 +32,9 @@ def load_data_into_database():
 
 
 def main() -> None:
+    #  Load dataframes from transform script
+    #  Pass them to load_data_to_database()
+
     ...
 
 
