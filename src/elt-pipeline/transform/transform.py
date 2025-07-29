@@ -56,11 +56,34 @@ def get_reference_data(raw_data: pd.DataFrame, table_name: str) -> pd.DataFrame:
     }
 
 
+def get_assignment_table(main_table: pd.DataFrame,
+                         reference_table: pd.DataFrame,
+                         main_table_name: str,
+                         reference_table_name: str):
+    assignment_table_rows = []
+    for row in main_table.iterrows():
+        for item in row[reference_table_name + 's']:
+            assignment_table_rows.append(
+                pd.DataFrame({
+                    main_table_name + '_id': [row[main_table_name + '_id']],
+                    reference_table_name + '_name': [item]
+                })
+            )
+    assignment_table = pd.concat(assignment_table_rows)
+    assignment_table = pd.merge(
+        assignment_table,
+        reference_table,
+        how='inner',
+        on=reference_table_name+'_name'
+    )
+
+
 def transform_s3_steam_data():
     raw_df = wr.s3.read_parquet()
     genres = get_reference_data('genre')
     publishers = get_reference_data('publisher')
     developers = get_reference_data('developer')
+
     return {
         'genre': genres['new'],
         'publisher': publishers['new'],
