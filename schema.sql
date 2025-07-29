@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS genre_assignment;
 DROP TABLE IF EXISTS developer_assignment;
 DROP TABLE IF EXISTS publisher_assignment;
 DROP TABLE IF EXISTS game;
+DROP TABLE IF EXISTS store;
 DROP TABLE IF EXISTS genre;
 DROP TABLE IF EXISTS publisher;
 DROP TABLE IF EXISTS developer;
@@ -27,17 +28,25 @@ CREATE TABLE genre (
     genre_name TEXT NOT NULL
 );
 
+-- Create store
+CREATE TABLE store (
+    store_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    store_name TEXT NOT NULL UNIQUE
+);
+
 -- Create game
 CREATE TABLE game (
     game_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     game_name TEXT NOT NULL,
     app_id INT UNIQUE NOT NULL,
+    store_id INT NOT NULL,
     release_date DATE,
     game_description TEXT,
     recent_reviews_summary TEXT,
     os_requirements TEXT,
     storage_requirements TEXT,
-    price FLOAT
+    price FLOAT,
+    FOREIGN KEY (store_id) REFERENCES store (store_id)
 );
 
 -- Game-Genre relationship
@@ -82,3 +91,10 @@ CREATE TABLE video (
     game_id INT,
     FOREIGN KEY (game_id) REFERENCES game (game_id)
 );
+
+-- Seed store table
+INSERT INTO store (store_name)
+VALUES
+    ('steam'),
+    ('epic'),
+    ('gog');
