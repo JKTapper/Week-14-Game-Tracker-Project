@@ -10,19 +10,19 @@ DROP TABLE IF EXISTS developer;
 -- Create publisher
 CREATE TABLE publisher (
     publisher_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    publisher_name TEXT
+    publisher_name TEXT UNIQUE NOT NULL
 );
 
 -- Create developer
 CREATE TABLE developer (
     developer_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    developer_name TEXT
+    developer_name TEXT UNIQUE NOT NULL
 );
 
 -- Create game 
 CREATE TABLE game (
     game_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    game_name TEXT,
+    game_name TEXT UNIQUE NOT NULL,
     release_date DATE,
     publisher_id INT,
     developer_id INT,
@@ -38,7 +38,7 @@ CREATE TABLE game (
 -- Create genre
 CREATE TABLE genre (
     genre_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    genre_name TEXT
+    genre_name TEXT UNIQUE NOT NULL
 );
 
 -- Create genre_assignment
@@ -53,7 +53,7 @@ CREATE TABLE genre_assignment (
 -- Create image
 CREATE TABLE image (
     image_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    url_image TEXT,
+    url_image TEXT UNIQUE NOT NULL,
     game_id INT,
     FOREIGN KEY (game_id) REFERENCES game (game_id)
 );
@@ -61,7 +61,7 @@ CREATE TABLE image (
 -- Create video
 CREATE TABLE video (
     video_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    url_video TEXT,
+    url_video TEXT UNIQUE NOT NULL,
     game_id INT,
     FOREIGN KEY (game_id) REFERENCES game (game_id)
 );
