@@ -46,5 +46,5 @@ resource "aws_db_instance" "c18-game-tracker-rds" {
 
 
 resource "aws_s3_bucket" "c18-game-tracker-s3" {
-  bucket = "c18-game-trcker-s3"
+  bucket = "c18-game-tracker-s3"
 }

@@ -1,12 +1,15 @@
 -- Drop tables in reverse dependency order
 DROP TABLE IF EXISTS video;
+
 DROP TABLE IF EXISTS image;
+
 DROP TABLE IF EXISTS genre_assignment;
-DROP TABLE IF EXISTS developer_assignment;
-DROP TABLE IF EXISTS publisher_assignment;
 DROP TABLE IF EXISTS game;
+
 DROP TABLE IF EXISTS genre;
+
 DROP TABLE IF EXISTS publisher;
+
 DROP TABLE IF EXISTS developer;
 
 -- Create publisher
@@ -18,7 +21,24 @@ CREATE TABLE publisher (
 -- Create developer
 CREATE TABLE developer (
     developer_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    developer_name TEXT NOT NULL
+    developer_name TEXT UNIQUE NOT NULL
+);
+
+-- Create game
+CREATE TABLE game (
+    game_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    store_app_id INT UNIQUE NOT NULL,
+    game_name TEXT NOT NULL,
+    release_date DATE,
+    publisher_id INT,
+    developer_id INT,
+    game_description TEXT,
+    recent_reviews_summary TEXT,
+    os_requirements TEXT,
+    storage_requirements TEXT,
+    price FLOAT,
+    FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id),
+    FOREIGN KEY (developer_id) REFERENCES developer (developer_id)
 );
 
 -- Create genre
