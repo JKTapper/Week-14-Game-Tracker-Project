@@ -28,6 +28,7 @@ CREATE TABLE developer (
 -- Create game
 CREATE TABLE game (
     game_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    store_app_id INT UNIQUE NOT NULL,
     game_name TEXT NOT NULL,
     release_date DATE,
     publisher_id INT,
