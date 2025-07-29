@@ -27,15 +27,22 @@ def get_engine() -> engine:
     return engine
 
 
-def load_data_into_database():
-    ...
+def load_data_into_database(drop_table: bool = False, full_df: pd.DataFrame) -> None:
+    engine = get_engine()
+    if drop_table:
+        exists = "replace"
+    else:
+        exists = "append"
 
 
 def main() -> None:
     #  Load dataframes from transform script
     #  Pass them to load_data_to_database()
 
-    ...
+    full_df = ...
+    #  Gets dataframe from transform script
+
+    load_data_into_database(full_df, drop_table=False)
 
 
 if __name__ == "__main__":
