@@ -18,12 +18,6 @@ def save_json_file(filename: str, json_data: list[dict[str]]):
         json.dump(json_data, f, indent=2)
 
 
-def extract_app_id(url: str) -> int:
-    '''Uses regex to search Steam URL for app ID and returns it'''
-    match = re.search(r'/app/(\d+)/', url)  # /app/{ID}/
-    return int(match.group(1)) if match else None  # first group in brackets
-
-
 def get_steam_game_details(app_id: int) -> dict[str]:
     '''Takes Steam store app ID and requests data through the API
     Returns dict of useful data'''
@@ -58,7 +52,7 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
     '''
     games_full_data = []
     for item in json_data:
-        app_id = extract_app_id(item['url'])
+        app_id = item['id']
         if app_id:
             details = get_steam_game_details(app_id)
             # Merge original data with extra info
