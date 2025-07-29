@@ -30,7 +30,8 @@ CREATE TABLE genre (
 -- Create game
 CREATE TABLE game (
     game_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    game_name TEXT UNIQUE NOT NULL,
+    game_name TEXT NOT NULL,
+    app_id INT UNIQUE,
     release_date DATE,
     game_description TEXT,
     recent_reviews_summary TEXT,
