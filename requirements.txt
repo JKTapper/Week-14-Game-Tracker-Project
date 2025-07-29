@@ -14,3 +14,6 @@ bs4
 requests
 psycopg2
 dotenv
+pandas
+boto3
+awswrangler
