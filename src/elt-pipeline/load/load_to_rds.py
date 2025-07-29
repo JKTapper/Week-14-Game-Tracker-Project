@@ -27,7 +27,7 @@ def get_engine() -> engine:
     return engine
 
 
-def load_data_into_database(drop_table: bool = False, full_df: pd.DataFrame) -> None:
+def load_data_into_database(full_df: pd.DataFrame, drop_table: bool = False) -> None:
     engine = get_engine()
     if drop_table:
         exists = "replace"
@@ -42,9 +42,18 @@ def main() -> None:
     full_df = ...
     #  Gets dataframe from transform script
 
-    load_data_into_database(full_df, drop_table=False)
+    load_data_into_database(full_df)
 
 
 if __name__ == "__main__":
     main()
 #  Data coming in will be a pandas dataframe
+
+
+"""
+return {
+        'genre': genres['new'],
+        'publisher': publishers['new'],
+        'developer': developers['new']
+    }
+"""
