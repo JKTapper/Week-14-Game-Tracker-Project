@@ -1,7 +1,7 @@
 # pylint: skip-file
 import pytest
 import pandas as pd
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from src.elt_pipeline.load.load import get_session, add_time_partitioning, upload_to_s3
 
 # Sample input data
