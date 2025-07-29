@@ -23,6 +23,7 @@ def add_time_partitioning(data: list[dict[str]]) -> pd.DataFrame:
     df['year'] = df['release'].dt.year
     df['month'] = df['release'].dt.month
     df['day'] = df['release'].dt.day
+    return df
 
 
 def upload_to_s3(df: pd.DataFrame):
