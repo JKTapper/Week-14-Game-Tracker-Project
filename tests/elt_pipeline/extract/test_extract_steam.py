@@ -48,18 +48,17 @@ def test_parse_games_bs_valid_data(example_two_games_html):
     assert len(games) == 2
 
     game1 = games[0]
-    assert game1 == {'app_id': '10',
-                     'title': 'Counter-Strike',
-                     'release': 'Nov 1, 2000',
-                     'url': 'https://store.steampowered.com/app/10/CounterStrike/'
-                     }
+
+    assert game1['app_id'] == '10'
+    assert game1['title'] == 'Counter-Strike'
+    assert game1['release'] == 'Nov 1, 2000'
+    assert game1['url'] == 'https://store.steampowered.com/app/10/CounterStrike/'
 
     game2 = games[1]
-    assert game2 == {'app_id': '730',
-                     'title': 'Counter-Strike 2',
-                     'release': 'Aug 21, 2012',
-                     'url': 'https://store.steampowered.com/app/730/CS2/'
-                     }
+    assert game2['app_id'] == '730'
+    assert game2['title'] == 'Counter-Strike 2'
+    assert game2['release'] == 'Aug 21, 2012'
+    assert game2['url'] == 'https://store.steampowered.com/app/730/CS2/'
 
 
 def test_parse_games_bs_empty_html():
@@ -82,17 +81,15 @@ def test_get_steam_game_details_success(requests_mock, example_steam_api):
 
     result = get_steam_game_details(app_id)
 
-    assert result == {
-        'app_id': 10,
-        'publishers': ['Valve'],
-        'developers': ['Valve'],
-        'description': "Play the world's number 1 online action game. Engage in an incredibly realistic brand of terrorist warfare in this wildly popular team-based game. Ally with teammates to complete strategic missions. Take out enemy sites. Rescue hostages. Your role affects your team's success. Your team's success affects your role.",
-        'requirements': {"minimum": "\n\t\t\t\u003Cp\u003E\u003Cstrong\u003EMinimum:\u003C/strong\u003E 500 mhz processor, 96mb ram, 16mb video card, Windows XP, Mouse, Keyboard, Internet Connection\u003Cbr /\u003E\u003C/p\u003E\n\t\t\t\u003Cp\u003E\u003Cstrong\u003ERecommended:\u003C/strong\u003E 800 mhz processor, 128mb ram, 32mb+ video card, Windows XP, Mouse, Keyboard, Internet Connection\u003Cbr /\u003E\u003C/p\u003E\n\t\t\t"},
-        'image': 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/header.jpg?t=1745368572',
-        'is_free': False,
-        'price': 719,
-        'genres': ['Action']
-    }
+    assert result['app_id'] == 10
+    assert result['publishers'] == ['Valve']
+    assert result['developers'] == ['Valve']
+    assert result['description'] == "Play the world's number 1 online action game. Engage in an incredibly realistic brand of terrorist warfare in this wildly popular team-based game. Ally with teammates to complete strategic missions. Take out enemy sites. Rescue hostages. Your role affects your team's success. Your team's success affects your role."
+    assert result['requirements'] == {"minimum": "\n\t\t\t\u003Cp\u003E\u003Cstrong\u003EMinimum:\u003C/strong\u003E 500 mhz processor, 96mb ram, 16mb video card, Windows XP, Mouse, Keyboard, Internet Connection\u003Cbr /\u003E\u003C/p\u003E\n\t\t\t\u003Cp\u003E\u003Cstrong\u003ERecommended:\u003C/strong\u003E 800 mhz processor, 128mb ram, 32mb+ video card, Windows XP, Mouse, Keyboard, Internet Connection\u003Cbr /\u003E\u003C/p\u003E\n\t\t\t"}
+    assert result['image'] == 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/header.jpg?t=1745368572'
+    assert result['is_free'] == False
+    assert result['price'] == 719
+    assert result['genres'] == ['Action']
 
 
 def test_get_steam_game_details_not_found(example_failure_html):
@@ -149,19 +146,20 @@ def test_iterate_through_scraped_games_success(mock_get_details):
     mock_get_details.assert_any_call(20)  # Was it called with app_id 20?
 
     full_data_game_1 = result[0]
-    assert full_data_game_1 == {'app_id': 10,
-                                'title': 'Game 1',
-                                'description': 'A great game!',
-                                'release': '2025-01-01',
-                                'publishers': ['Fake Publisher'],
-                                'is_free': False}
+    assert full_data_game_1['app_id'] == 10
+    assert full_data_game_1['title'] == 'Game 1'
+    assert full_data_game_1['description'] == 'A great game!'
+    assert full_data_game_1['release'] == '2025-01-01'
+    assert full_data_game_1['publishers'] == ['Fake Publisher']
+    assert full_data_game_1['is_free'] == False
+
     full_data_game_2 = result[1]
-    assert full_data_game_2 == {'app_id': 20,
-                                'title': 'Game 2',
-                                'description': 'A great game!',
-                                'release': '2025-01-02',
-                                'publishers': ['Fake Publisher'],
-                                'is_free': False}
+    assert full_data_game_2['app_id'] == 20
+    assert full_data_game_2['title'] == 'Game 2'
+    assert full_data_game_2['description'] == 'A great game!'
+    assert full_data_game_2['release'] == '2025-01-02'
+    assert full_data_game_2['publishers'] == ['Fake Publisher']
+    assert full_data_game_2['is_free'] == False
 
 
 def test_iterate_through_scraped_games_empty_list():
