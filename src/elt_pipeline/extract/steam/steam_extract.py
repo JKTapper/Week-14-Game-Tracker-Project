@@ -2,7 +2,6 @@
 PC games and stores all scraped games in a json list.
 Takes json list of newly scraped games, requests data from API
 and adds supplementary data to the json list.'''
-# import json
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
@@ -79,6 +78,7 @@ def get_steam_game_details(app_id: int) -> dict[str]:
                     'is_free': game_data.get('is_free', False),
                     'price': game_data.get('price_overview', {}).get('final'),
                     'genres': [genre['description'] for genre in game_data.get('genres', [])],
+                    'image': game_data.get('header_image')
                 }
             return {'app_id': app_id, 'error': 'Data not found or incomplete'}
         return {'app_id': app_id,
@@ -98,7 +98,6 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
             details = get_steam_game_details(app_id)
             # Merge original data with extra info
             full_data = item | details
-            print(full_data)
             games_full_data.append(full_data)
     return games_full_data
 
@@ -107,7 +106,7 @@ if __name__ == "__main__":
     existing_games = get_existing_games(S3_PATH)
 
     steam_html = get_html(STEAM_URL)
-    scraped_games = parse_games_bs(steam_html)[0:5]  # first 5 only
+    scraped_games = parse_games_bs(steam_html)
     new_games = [
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
     print(new_games, '\n')
