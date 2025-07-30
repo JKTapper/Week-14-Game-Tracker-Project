@@ -35,7 +35,6 @@ def load_data_into_database(games_df: pd.DataFrame,
                             developer_df: pd.DataFrame,
                             genre_df: pd.DataFrame) -> None:
     """Takes data and loads it into each table"""
-    engine = get_engine()
 
     if "store_name" in games_df.columns:
         stores_df = games_df[["store_name"]].dropna(
@@ -43,55 +42,47 @@ def load_data_into_database(games_df: pd.DataFrame,
     else:
         stores_df = pd.DataFrame(columns=["store_name"])
 
+    engine = get_engine()
+
     with engine.begin() as conn:
+
         store_cache = upload_stores(conn, stores_df)
+
         publisher_cache = upload_references_to_games(
             conn, publisher_df, "publisher_name", "publisher", "publisher_id")
-        dev_cache = upload_references_to_games(
+        developer_cache = upload_references_to_games(
             conn, developer_df, "developer_name", "developer", "developer_id")
+        genre_cache = upload_genres(conn, genre_df)
+        game_cache = games_upload(conn, store_cache, games_df)
 
-        for _, row in genre_df.iterrows():
-            conn.execute(text("""
-                INSERT INTO genre (genre_name)
-                VALUES (:name)
-                ON CONFLICT (genre_name) DO NOTHING
-            """), {"name": row["genre_name"]})
+        genre_links = []
+        developer_links = []
+        publisher_links = []
 
-        rows = conn.execute(
-            text("SELECT genre_name, genre_id FROM genre")).mappings()
-        genre_cache = {row["genre_name"]: row["genre_id"] for row in rows}
+        for _, row in games_df.iterrows():
+            game_id = game_cache[row["app_id"]]
 
-        games_cache = games_upload(conn, store_cache, games_df)
+            for genre in row.get("genres", []):
+                genre_id = genre_cache.get(genre)
+                if genre_id is not None:
+                    genre_links.append((genre_id, game_id))
 
-        for _, game_row in games_df.iterrows():
-            db_game_id = games_cache[game_row["app_id"]]
-            for genre_name in game_row["genres"]:
-                conn.execute(text("""
-                    INSERT INTO genre_assignment (genre_id, game_id)
-                    VALUES (:g_id, :gm_id)
-                    ON CONFLICT DO NOTHING
-                """), {
-                    "g_id": genre_cache[genre_name],
-                    "gm_id": db_game_id
-                })
-            for dev_name in game_row.get("developers", []):
-                conn.execute(text("""
-                    INSERT INTO developer_assignment (developer_id, game_id)
-                    VALUES (:d_id, :gm_id)
-                    ON CONFLICT DO NOTHING
-                """), {
-                    "d_id": dev_cache[dev_name],
-                    "gm_id": db_game_id
-                })
-            for pub_name in game_row.get("publishers", []):
-                conn.execute(text("""
-                    INSERT INTO publisher_assignment (publisher_id, game_id)
-                    VALUES (:p_id, :gm_id)
-                    ON CONFLICT DO NOTHING
-                """), {
-                    "p_id": publisher_cache[pub_name],
-                    "gm_id": db_game_id
-                })
+            for dev in row.get("developers", []):
+                dev_id = developer_cache.get(dev)
+                if dev_id is not None:
+                    developer_links.append((dev_id, game_id))
+
+            for pub in row.get("publishers", []):
+                pub_id = publisher_cache.get(pub)
+                if pub_id is not None:
+                    publisher_links.append((pub_id, game_id))
+
+        upload_links(
+            conn, "genre_assignment", "genre_id", "game_id", genre_links)
+        upload_links(conn, "developer_assignment",
+                     "developer_id", "game_id", developer_links)
+        upload_links(conn, "publisher_assignment",
+                     "publisher_id", "game_id", publisher_links)
 
 
 def upload_stores(conn: Connection, stores_df: pd.DataFrame) -> dict:
@@ -122,29 +113,32 @@ def upload_references_to_games(conn: Connection,
     """Helps with loading into publisher, developer tables"""
 
     for _, row in df.iterrows():
-        conn.execute(text(
-            f"""
-            INSERT INTO {table_name} ({pk_name}, {col})
-            VALUES (:id, :name)
+        conn.execute(text(f"""
+            INSERT INTO {table_name} ({col})
+            VALUES (:name)
             ON CONFLICT ({col}) DO NOTHING
-            """
-        ), {"id": int(row[pk_name]), "name": row[col]})
+            """), {
+            "name": row[col]
+        }
+        )
 
-    rows = conn.execute(text(
-        f"SELECT {col}, {pk_name} FROM {table_name}"
-    )).mappings()
+    rows = conn.execute(text(f"""
+        SELECT {col}, {pk_name}
+          FROM {table_name}
+    """)).mappings()
 
-    return {row[col]: getattr(row, pk_name) for row in rows}
+    return {r[col]: r[pk_name] for r in rows}
 
 
 def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) -> dict:
     """Uploads games to games tables and returns game_id cache"""
     for _, row in games_df.iterrows():
 
+        default_store_id = store_cache["steam"]
+
         store_name = row.get(
-            "store_name") if "store_name" in games_df.columns else 1
-        # Currently defaults to steam if there is no store name provided
-        store_id = store_cache.get(store_name) if store_name else 1
+            "store_name") if "store_name" in games_df.columns else None
+        store_id = store_cache.get(store_name, default_store_id)
 
         conn.execute(
             text("""
@@ -160,7 +154,6 @@ def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) ->
                 "name": row["game_name"],
                 "app":  row["app_id"],
                 "store": store_id,
-                #  Will need changing when updating to store data from multiple storefronts
                 "rel":   row.get("release_date"),
                 "desc":  row.get("game_description"),
                 "rev":   row.get("recent_reviews_summary"),
@@ -174,6 +167,35 @@ def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) ->
     return {row.app_id: row.game_id for row in rows}
 
 
+def upload_genres(conn: Connection, genre_df: pd.DataFrame) -> dict:
+    """Insert genres and return genre  cache."""
+    for _, row in genre_df.iterrows():
+        conn.execute(text("""
+            INSERT INTO genre (genre_name)
+            VALUES (:name)
+            ON CONFLICT (genre_name) DO NOTHING
+        """), {"name": row["genre_name"]})
+
+    rows = conn.execute(
+        text("SELECT genre_name, genre_id FROM genre")).mappings()
+    return {row["genre_name"]: row["genre_id"] for row in rows}
+
+
+def upload_links(conn: Connection,
+                 table_name: str,
+                 left_col: str,
+                 right_col: str,
+                 data: list[tuple]) -> None:
+    """Insert pairs into the joint tables"""
+
+    for left_id, right_id in data:
+        conn.execute(text(f"""
+            INSERT INTO {table_name} ({left_col}, {right_col})
+            VALUES (:left, :right)
+            ON CONFLICT DO NOTHING
+        """), {"left": left_id, "right": right_id})
+
+
 def main() -> None:
     """Main to run other functions"""
 
@@ -181,6 +203,8 @@ def main() -> None:
 
     games_df = data["game"]
     games_df["app_id"] = games_df["app_id"].astype(int)
+    games_df["price"] = games_df["price"].astype(float)
+
     publisher_df = data["publisher"]
     developer_df = data["developer"]
     genre_df = data["genre"]

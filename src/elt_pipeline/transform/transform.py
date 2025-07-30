@@ -50,6 +50,16 @@ def get_reference_data(raw_data: pd.DataFrame,
     Combines incoming data with old data to create up to date
     dataframe representing secondary tables like genre or developer
     """
+    id_col = f"{table_name}_id"
+
+    if id_col in existing_data.columns:
+        existing_data[id_col] = (
+            pd.to_numeric(existing_data[id_col], errors='coerce')
+              .fillna(0)
+              .astype(int)
+        )
+    else:
+        existing_data[id_col] = pd.Series(dtype=int)
 
     valid_lists = raw_data[table_name +
                            's'].apply(lambda x: isinstance(x, (list, np.ndarray)))
@@ -69,6 +79,7 @@ def get_reference_data(raw_data: pd.DataFrame,
             highest_existing_id + len(added_data) + 1
         ))
     })
+
     return {
         'new': data_to_add_to_rds,
         'all': pd.concat([existing_data, data_to_add_to_rds])
@@ -186,6 +197,7 @@ def transform_s3_steam_data():
     transforms it into the correct format to be uploaded to the RDS
     """
     raw_df = wr.s3.read_parquet(S3_PATH)
+    raw_df["price"] = raw_df["price"].astype(float)
     existing_data = read_db_table_into_df('game')
     existing_data['game_id'] = pd.to_numeric(
         existing_data['game_id'], errors='coerce').fillna(0).astype(int)
@@ -198,6 +210,7 @@ def transform_s3_steam_data():
         existing_data["game_id"].max(
         ) + 1 + len(game_data) if not existing_data.empty else 1 + len(game_data)
     ))
+
     new_data = new_data.copy()
     new_data["game_id"] = game_data["game_id"]
 
