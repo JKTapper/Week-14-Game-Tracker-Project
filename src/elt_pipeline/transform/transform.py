@@ -40,20 +40,25 @@ def read_db_table_into_df(table_name: str) -> pd.DataFrame:
         conn.close()
 
 
-def get_reference_data(raw_data: pd.DataFrame, table_name: str) -> pd.DataFrame:
+def get_reference_data(raw_data: pd.DataFrame,
+                       existing_data: pd.DataFrame,
+                       table_name: str) -> pd.DataFrame:
     """
     Combines incoming data with old data to create up to date
     dataframe representing secondary tables like genre or developer
     """
-    existing_data = read_db_table_into_df(table_name)
-    new_data = list(set(sum(raw_data[table_name + 's'])))
-    filter(new_data, lambda x: x not in existing_data[table_name + '_name'])
+    new_data = list(set(raw_data[table_name + 's'].sum()))
+    print(new_data)
+    print(existing_data[table_name + '_name'])
+    added_data = list(
+        filter(lambda x: not x in existing_data[table_name + '_name'].unique(), new_data))
+    print(added_data)
     highest_existing_id = max(existing_data[table_name + '_id'])
     data_to_add_to_rds = pd.DataFrame({
-        table_name + '_name': new_data,
+        table_name + '_name': added_data,
         table_name + '_id': list(range(
             highest_existing_id + 1,
-            highest_existing_id + len(new_data) + 1
+            highest_existing_id + len(added_data) + 1
         ))
     })
     return {
@@ -154,9 +159,12 @@ def transform_s3_steam_data():
     raw_df = wr.s3.read_parquet(S3_PATH)
     existing_data = read_db_table_into_df('game')
     new_data = raw_df[not raw_df['app_id'].isin(existing_data['app_id'])]
-    genres = get_reference_data(new_data, 'genre')
-    publishers = get_reference_data(new_data, 'publisher')
-    developers = get_reference_data(new_data, 'developer')
+    genres = get_reference_data(
+        new_data, read_db_table_into_df('genre'), 'genre')
+    publishers = get_reference_data(
+        new_data, read_db_table_into_df('publisher'), 'publisher')
+    developers = get_reference_data(
+        new_data, read_db_table_into_df('developer'), 'developer')
     return {
         'genre': genres['new'],
         'publisher': publishers['new'],

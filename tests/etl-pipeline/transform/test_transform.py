@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from src.elt_pipeline.transform.transform import get_assignment_df, process_data, extract_memory_requirements
+from src.elt_pipeline.transform.transform import get_assignment_df, process_data, extract_memory_requirements, get_reference_data
 
 get_assignment_df_test_data = [(
     pd.DataFrame({
@@ -64,3 +64,35 @@ extract_memory_requirements_test_data = [
 def test_extract_memory_requirements(requirements, memory_requirements):
     assert extract_memory_requirements(
         requirements) == memory_requirements
+
+
+get_reference_data_test_data = [(
+    pd.DataFrame({
+        'friend_id': [1, 2],
+        'friend_name': ['Hugo', 'Susan'],
+        'clubs': [['Tennis', 'Chess'], ['Chess', 'Knitting']]
+    }),
+    pd.DataFrame({
+        'club_name': ['Tennis'],
+        'club_id': [1]
+    }),
+    'club',
+    pd.DataFrame({
+        'club_name': ['Tennis', 'Chess', 'Knitting'],
+        'club_id': [1, 2, 3]
+    })
+)]
+
+
+@pytest.mark.parametrize('main_df,reference_df,reference_df_name,new_reference_df', get_reference_data_test_data)
+def test_get_reference_data(main_df, reference_df, reference_df_name, new_reference_df):
+    reference_table = get_reference_data(main_df, reference_df,
+                                         reference_df_name)
+    assert set(reference_table['all']['club_name']) == {
+        'Tennis', 'Chess', 'Knitting'}
+    assert set(reference_table['all']['club_id']) == {
+        1, 2, 3}
+    assert set(reference_table['new']['club_name']) == {
+        'Chess', 'Knitting'}
+    assert set(reference_table['new']['club_id']) == {
+        2, 3}
