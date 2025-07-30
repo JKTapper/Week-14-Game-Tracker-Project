@@ -62,6 +62,4 @@ def fake_data():
 
 
 def test_load_data_into_database(monkeypatch, temp_engine):
-
-
-...
+    ...
