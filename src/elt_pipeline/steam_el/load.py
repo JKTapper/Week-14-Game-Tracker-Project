@@ -1,10 +1,10 @@
 '''Receiving json and upload to S3, time-partitioning by day'''
+from datetime import datetime
 import boto3
 import pandas as pd
 import awswrangler as wr
 
-BUCKET = 'c18-game-tracker-s3'
-S3_PATH = f"s3://{BUCKET}/input/"
+S3_PATH = f"s3://c18-game-tracker-s3/input/"
 
 
 def get_session() -> boto3.Session:
@@ -19,7 +19,11 @@ def get_session() -> boto3.Session:
 def add_time_partitioning(data: list[dict[str]]) -> pd.DataFrame:
     '''Converts json to dataframe and adds Y/M/D columns'''
     df = pd.DataFrame(data)
-    df['release'] = pd.to_datetime(df['release'])
+    df['release'] = pd.to_datetime(df['release'], errors='coerce')
+
+    # Fill invalid or missing dates with a placeholder
+    unreleased_date = datetime(9999, 12, 31)
+    df['release'] = df['release'].fillna(unreleased_date)
 
     df['year'] = df['release'].dt.year
     df['month'] = df['release'].dt.month
@@ -27,13 +31,14 @@ def add_time_partitioning(data: list[dict[str]]) -> pd.DataFrame:
     return df
 
 
-def upload_to_s3(df: pd.DataFrame):
+def upload_to_s3(df: pd.DataFrame, session: boto3.Session):
     '''Uses awswrangler to upload dataframe as a parquet file to S3 bucket'''
     wr.s3.to_parquet(
         df=df,
         path=S3_PATH,
         dataset=True,
         mode="append",
-        partition_cols=["year", "month", "day"]
+        partition_cols=["year", "month", "day"],
+        boto3_session=session
     )
     print(f"Uploaded to {S3_PATH}")
