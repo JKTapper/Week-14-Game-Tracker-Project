@@ -48,3 +48,13 @@ resource "aws_db_instance" "c18-game-tracker-rds" {
 resource "aws_s3_bucket" "c18-game-tracker-s3" {
   bucket = "c18-game-tracker-s3"
 }
+
+# ECR Repository
+resource "aws_ecr_repository" "c18_game_tracker_repo" {
+  name                 = "c18-game-tracker-ecr"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
