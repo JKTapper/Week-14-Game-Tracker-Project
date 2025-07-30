@@ -9,7 +9,6 @@ import requests_mock
 import pandas as pd
 import awswrangler as wr
 import requests as req
-import pytest
 
 
 @patch('awswrangler.s3.read_parquet')
@@ -17,12 +16,13 @@ def test_get_existing_games_success(mock_read_parquet):
     """
     Tests get_existing_games returns correct dataframe on success.
     """
-    expected_df = pd.DataFrame({'app_id': [101, 202]})
-    mock_read_parquet.return_value = expected_df
+    mock_df = pd.DataFrame({'app_id': [100, 101]})
+    mock_read_parquet.return_value = mock_df
+    expected_list = ['100', '101']
 
-    result_df = get_existing_games("s3://fake-bucket/input/")
+    result = get_existing_games("s3://fake-bucket/input/", None)
 
-    pd.testing.assert_frame_equal(result_df, expected_df)
+    assert result == expected_list
     mock_read_parquet.assert_called_once()
 
 
@@ -31,11 +31,11 @@ def test_get_existing_games_failure(mock_read_parquet):
     """
     Tests get_existing_games returns empty dataframe on failure.
     """
-    mock_read_parquet.side_effect = wr.exceptions.NoFilesFound
+    mock_read_parquet.side_effect = Exception("No files found")
 
-    result_df = get_existing_games("s3://fake-bucket/input/")
+    result = get_existing_games("s3://fake-bucket/input/", None)
 
-    assert result_df.empty
+    assert result == []
     mock_read_parquet.assert_called_once()
 
 
