@@ -115,19 +115,20 @@ def upload_references_to_games(conn: Connection, df: pd.DataFrame, col: str, tab
     for name in df[col]:
         conn.execute(text(
             f"""
-                INSERT INTO {table_name} ({col}_name)
+                INSERT INTO {table_name} ({col})
                 VALUES (:name)
-                ON CONFLICT ({col}_name) DO NOTHING
+                ON CONFLICT ({col}) DO NOTHING
             """
         ),
             {"name": name}
         )
 
+    # Uploading
     rows = conn.execute(text(
         f"SELECT {col}, {pk_name} FROM {table_name}"
     ))
 
-    return {row[col + "_name"]: getattr(row, pk_name) for row in rows}
+    return {row[col]: getattr(row, pk_name) for row in rows}
 
 
 def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) -> dict:
@@ -175,13 +176,6 @@ def main() -> None:
     genre_assignment_df = data["genre_assignment"]
     developer_assignment_df = data["developer_assignment"]
     publisher_assignment_df = data["publisher_assignment"]
-
-    print("Publishers DF:", publisher_df.head())
-    print("Developers DF:", developer_df.head())
-    print("Genres DF:", genre_df.head())
-    print("Genre Assignment DF:", genre_assignment_df.head())
-    print("Developer Assignment DF:", developer_assignment_df.head())
-    print("Publisher Assignment DF:", publisher_assignment_df.head())
 
     load_data_into_database(games_df,
                             publisher_df,

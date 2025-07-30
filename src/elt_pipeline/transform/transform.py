@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from psycopg2 import connect
 from psycopg2.extensions import connection
 from psycopg2.extras import RealDictCursor
+import numpy as np
 
 
 BUCKET = 'c18-game-tracker-s3'
@@ -51,9 +52,10 @@ def get_reference_data(raw_data: pd.DataFrame,
     """
 
     valid_lists = raw_data[table_name +
-                           's'].apply(lambda x: isinstance(x, list))
+                           's'].apply(lambda x: isinstance(x, (list, np.ndarray)))
     cleaned_column = raw_data.loc[valid_lists, table_name + 's']
-    cleaned_column = sum(cleaned_column, [])
+    cleaned_column = [
+        item for sublist in cleaned_column for item in sublist.tolist()]
 
     new_data = list(set(cleaned_column))
 
@@ -185,7 +187,12 @@ def transform_s3_steam_data():
     """
     raw_df = wr.s3.read_parquet(S3_PATH)
     existing_data = read_db_table_into_df('game')
+    existing_data['game_id'] = pd.to_numeric(
+        existing_data['game_id'], errors='coerce').fillna(0).astype(int)
+
     new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])]
+
+    # print(new_data[['genres', 'publishers', 'developers']].head())
     game_data = process_data(new_data, GAME_DATA_TRANSLATION)
     game_data["game_id"] = list(range(
         existing_data["game_id"].max() + 1 if not existing_data.empty else 1,
@@ -201,8 +208,6 @@ def transform_s3_steam_data():
         new_data, read_db_table_into_df('publisher'), 'publisher')
     developers = get_reference_data(
         new_data, read_db_table_into_df('developer'), 'developer')
-
-    print("new_data columns:", new_data.columns)
 
     return {
         'genre': genres['new'],
