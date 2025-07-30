@@ -10,11 +10,12 @@ Pygments==2.19.2
 pylint==3.3.7
 pytest==8.4.1
 tomlkit==0.13.3
+numpy<2.3.0
+awswrangler
+pandas
+dotenv
+psycopg2-binary
 bs4
 requests
-psycopg2
-dotenv
-pandas
 boto3
-awswrangler
 requests_mock

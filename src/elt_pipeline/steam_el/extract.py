@@ -2,26 +2,26 @@
 PC games and stores all scraped games in a json list.
 Takes json list of newly scraped games, requests data from API
 and adds supplementary data to the json list.'''
+import logging
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
-import pandas as pd
 import awswrangler as wr
+from load import get_session, S3_PATH
 
-BUCKET = 'c18-game-tracker-s3'
-S3_PATH = f"s3://{BUCKET}/input/"
 STEAM_URL = "https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english"
 
 
-def get_existing_games(path) -> pd.DataFrame:
+def get_existing_games(path: str, session) -> list[str]:
     '''Reads the entire dataset from S3 (partitioned by year/month/day).
     Returns a DataFrame containing existing games' app IDs'''
     try:
-        df = wr.s3.read_parquet(path, dataset=True, columns=['app_id'])
-        return df
+        df = wr.s3.read_parquet(path, dataset=True, columns=[
+                                'app_id'], boto3_session=session)
+        return df['app_id'].astype(str).tolist()
     except Exception as e:
-        print("No existing data found in S3:", e)
-        return pd.DataFrame()
+        logging.error(f"No existing data found in S3: {e}")
+        return []
 
 
 def get_html(url):
@@ -103,13 +103,12 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
 
 
 if __name__ == "__main__":
-    existing_games = get_existing_games(S3_PATH)
+    main_session = get_session()
+    existing_games = get_existing_games(S3_PATH, main_session)
 
     steam_html = get_html(STEAM_URL)
     scraped_games = parse_games_bs(steam_html)
     new_games = [
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
-    print(new_games, '\n')
 
     full_game_data = iterate_through_scraped_games(new_games)
-    print(full_game_data)
