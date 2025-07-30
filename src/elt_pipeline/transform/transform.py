@@ -33,11 +33,13 @@ def get_db_connection() -> connection:
 
 def read_db_table_into_df(table_name: str) -> pd.DataFrame:
     """Returns the data in an RDS table as a dataframe"""
+    conn = None
     try:
         conn = get_db_connection()
         return pd.read_sql(f"SELECT * FROM {table_name}", conn)
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 def get_reference_data(raw_data: pd.DataFrame,
@@ -47,7 +49,14 @@ def get_reference_data(raw_data: pd.DataFrame,
     Combines incoming data with old data to create up to date
     dataframe representing secondary tables like genre or developer
     """
-    new_data = list(set(raw_data[table_name + 's'].sum()))
+
+    valid_lists = raw_data[table_name +
+                           's'].apply(lambda x: isinstance(x, list))
+    cleaned_column = raw_data.loc[valid_lists, table_name + 's']
+    cleaned_column = sum(cleaned_column, [])
+
+    new_data = list(set(cleaned_column))
+
     added_data = list(
         filter(lambda x: not x in existing_data[table_name + '_name'].unique(), new_data))
     highest_existing_id = max(existing_data[table_name + '_id'])
@@ -166,7 +175,7 @@ def transform_s3_steam_data():
     """
     raw_df = wr.s3.read_parquet(S3_PATH)
     existing_data = read_db_table_into_df('game')
-    new_data = raw_df[not raw_df['app_id'].isin(existing_data['app_id'])]
+    new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])]
     genres = get_reference_data(
         new_data, read_db_table_into_df('genre'), 'genre')
     publishers = get_reference_data(

@@ -3,9 +3,10 @@
 import os
 from dotenv import load_dotenv
 import pandas as pd
-from sqlalchemy import create_engine, engine, text, Connection
+from sqlalchemy import create_engine, Engine, text, Connection
 
-from transform import transform_s3_steam_data
+from elt_pipeline.transform.transform import transform_s3_steam_data
+
 
 load_dotenv()
 AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
@@ -19,7 +20,7 @@ DB_PORT = int(os.getenv("DB_PORT"))
 # DB_SCHEMA = os.getenv("DB_SCHEMA")
 
 
-def get_engine() -> engine:
+def get_engine() -> Engine:
     """Connects to RDS Postgres instance"""
     url = (
         f"postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}"
