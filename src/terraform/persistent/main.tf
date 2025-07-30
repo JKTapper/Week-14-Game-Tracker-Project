@@ -113,10 +113,12 @@ resource "aws_iam_role_policy_attachment" "lambda_attach" {
 
 # Lambda Function from ECR
 resource "aws_lambda_function" "docker_lambda" {
-  function_name = "el-lambda"
+  function_name = "c18-game-tracker-el-lambda"
   package_type  = "Image"
   image_uri     = var.lambda_image_uri
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
+  timeout       = 60
+  memory_size   = 512
 
   environment {
     variables = {
@@ -127,7 +129,7 @@ resource "aws_lambda_function" "docker_lambda" {
 
 # Schedule (every hour)
 resource "aws_cloudwatch_event_rule" "hourly" {
-  name                = "lambda-hourly-schedule"
+  name                = "c18-game-tracker-lambda-el-hourly-schedule"
   schedule_expression = "rate(1 hour)"
 }
 
