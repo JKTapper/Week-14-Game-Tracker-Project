@@ -41,8 +41,11 @@ def load_data_into_database(games_df: pd.DataFrame,
     """Takes data and loads it into each table"""
     engine = get_engine()
 
-    stores_df = games_df[["store_name"]].dropna(
-    ).drop_duplicates().reset_index(drop=True)
+    if "store_name" in games_df.columns:
+        stores_df = games_df[["store_name"]].dropna(
+        ).drop_duplicates().reset_index(drop=True)
+    else:
+        stores_df = pd.DataFrame(columns=["store_name"])
 
     with engine.begin() as conn:
         store_cache = upload_stores(conn, stores_df)
@@ -52,7 +55,7 @@ def load_data_into_database(games_df: pd.DataFrame,
             conn, developer_df, "developer_name", "developer", "developer_id")
         genre_cache = upload_references_to_games(
             conn, genre_df,     "genre_name",     "genre",     "genre_id")
-        games_cache = games_upload(conn, games_df, store_cache)
+        games_cache = games_upload(conn, store_cache, games_df)
 
         for _, row in genre_assignment_df.iterrows():
             conn.execute(
@@ -121,7 +124,7 @@ def upload_references_to_games(conn: Connection, df: pd.DataFrame, col: str, tab
         )
 
     rows = conn.execute(text(
-        f"SELECT {col}_name, {pk_name} FROM {table_name}"
+        f"SELECT {col}, {pk_name} FROM {table_name}"
     ))
 
     return {row[col + "_name"]: getattr(row, pk_name) for row in rows}
@@ -130,6 +133,9 @@ def upload_references_to_games(conn: Connection, df: pd.DataFrame, col: str, tab
 def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) -> dict:
     """Uploads games to games tables and returns game_id cache"""
     for _, row in games_df.iterrows():
+        store_name = row.get(
+            "store_name") if "store_name" in games_df.columns else None
+        store_id = store_cache.get(store_name) if store_name else None
         conn.execute(
             text("""
                 INSERT INTO game
@@ -143,7 +149,7 @@ def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) ->
             {
                 "name": row["game_name"],
                 "app":  row["app_id"],
-                "store": store_cache[row["store_name"]],
+                "store": 1,
                 "rel":   row.get("release_date"),
                 "desc":  row.get("game_description"),
                 "rev":   row.get("recent_reviews_summary"),
@@ -169,6 +175,13 @@ def main() -> None:
     genre_assignment_df = data["genre_assignment"]
     developer_assignment_df = data["developer_assignment"]
     publisher_assignment_df = data["publisher_assignment"]
+
+    print("Publishers DF:", publisher_df.head())
+    print("Developers DF:", developer_df.head())
+    print("Genres DF:", genre_df.head())
+    print("Genre Assignment DF:", genre_assignment_df.head())
+    print("Developer Assignment DF:", developer_assignment_df.head())
+    print("Publisher Assignment DF:", publisher_assignment_df.head())
 
     load_data_into_database(games_df,
                             publisher_df,

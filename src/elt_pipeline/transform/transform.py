@@ -59,7 +59,7 @@ def get_reference_data(raw_data: pd.DataFrame,
 
     added_data = list(
         filter(lambda x: not x in existing_data[table_name + '_name'].unique(), new_data))
-    highest_existing_id = max(existing_data[table_name + '_id'])
+    highest_existing_id = max(existing_data[table_name + '_id'], default=0)
     data_to_add_to_rds = pd.DataFrame({
         table_name + '_name': added_data,
         table_name + '_id': list(range(
@@ -131,17 +131,27 @@ def extract_memory_requirements(requirements: dict) -> str:
     Extracts the memory requirements from the
     requirements dictionary returned by the API
     """
-    return re.search(
-        r'(?<=<strong>Storage:<\\\/strong> ).+?(?= available space)',
-        requirements['minimum']
-    ).group()
-    return new_dataframe
+    if not isinstance(requirements, dict):
+        return None
+    try:
+        match = re.search(
+            r'(?<=<strong>Storage:<\\\/strong> ).+?(?= available space)',
+            requirements['minimum']
+        ).group()
+        if match:
+            return match
+        else:
+            return None
+    except Exception:
+        return None
 
 
 def interpret_release_date(release_date: str) -> date:
     """
     Interprets the release date as a date object
     """
+    if isinstance(release_date, (datetime, pd.Timestamp)):
+        return release_date.date()
     try:
         return datetime.strptime(release_date, '%d %b, %Y').date()
     except ValueError:
@@ -158,7 +168,7 @@ GAME_DATA_TRANSLATION = [
     {'old_name': 'requirements', 'new_name': 'storage_requirements',
         'translation': extract_memory_requirements},
     {'name': 'price',
-        'translation': lambda x: int(100*x)},
+        'translation': lambda x: int(100*x) if pd.notna(x) else 0},
     {'old_name': 'title', 'new_name': 'game_name',
         'translation': lambda x: x},
     {'name': 'app_id',
@@ -176,12 +186,24 @@ def transform_s3_steam_data():
     raw_df = wr.s3.read_parquet(S3_PATH)
     existing_data = read_db_table_into_df('game')
     new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])]
+    game_data = process_data(new_data, GAME_DATA_TRANSLATION)
+    game_data["game_id"] = list(range(
+        existing_data["game_id"].max() + 1 if not existing_data.empty else 1,
+        existing_data["game_id"].max(
+        ) + 1 + len(game_data) if not existing_data.empty else 1 + len(game_data)
+    ))
+    new_data = new_data.copy()
+    new_data["game_id"] = game_data["game_id"]
+
     genres = get_reference_data(
         new_data, read_db_table_into_df('genre'), 'genre')
     publishers = get_reference_data(
         new_data, read_db_table_into_df('publisher'), 'publisher')
     developers = get_reference_data(
         new_data, read_db_table_into_df('developer'), 'developer')
+
+    print("new_data columns:", new_data.columns)
+
     return {
         'genre': genres['new'],
         'publisher': publishers['new'],
@@ -189,5 +211,5 @@ def transform_s3_steam_data():
         'genre_assignment': get_assignment_df(new_data, genres['all'], 'game', 'genre'),
         'publisher_assignment': get_assignment_df(new_data, publishers['all'], 'game', 'publisher'),
         'developer_assignment': get_assignment_df(new_data, developers['all'], 'game', 'developer'),
-        'game': process_data(new_data, GAME_DATA_TRANSLATION)
+        'game': game_data
     }
