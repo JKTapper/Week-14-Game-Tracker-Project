@@ -1,3 +1,4 @@
+# pylint: skip-file
 """
 This module tests functions used during the extraction of steam data via scraping and the api
 """
