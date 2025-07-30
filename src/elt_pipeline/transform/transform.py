@@ -1,6 +1,6 @@
 """
-Transofrms the data stored in the S3 to
-be in the right form to beloaded into the RDS
+Transforms the data stored in the S3 to
+be in the right format to be loaded into the RDS
 """
 from os import environ
 from datetime import datetime
@@ -48,11 +48,8 @@ def get_reference_data(raw_data: pd.DataFrame,
     dataframe representing secondary tables like genre or developer
     """
     new_data = list(set(raw_data[table_name + 's'].sum()))
-    print(new_data)
-    print(existing_data[table_name + '_name'])
     added_data = list(
         filter(lambda x: not x in existing_data[table_name + '_name'].unique(), new_data))
-    print(added_data)
     highest_existing_id = max(existing_data[table_name + '_id'])
     data_to_add_to_rds = pd.DataFrame({
         table_name + '_name': added_data,
@@ -154,7 +151,7 @@ GAME_DATA_TRANSLATION = [
 def transform_s3_steam_data():
     """
     Reads data in the S3, discards any data already in the RDS and
-    transforms it into the correc tformat to be uploaded to the RDS
+    transforms it into the correct format to be uploaded to the RDS
     """
     raw_df = wr.s3.read_parquet(S3_PATH)
     existing_data = read_db_table_into_df('game')
@@ -169,8 +166,8 @@ def transform_s3_steam_data():
         'genre': genres['new'],
         'publisher': publishers['new'],
         'developer': developers['new'],
-        'genre_assignmnet': get_assignment_df(new_data, genres['all'], 'game', 'genre'),
-        'publisher_assignmnet': get_assignment_df(new_data, publishers['all'], 'game', 'publisher'),
-        'developer_assignmnet': get_assignment_df(new_data, developers['all'], 'game', 'developer'),
+        'genre_assignment': get_assignment_df(new_data, genres['all'], 'game', 'genre'),
+        'publisher_assignment': get_assignment_df(new_data, publishers['all'], 'game', 'publisher'),
+        'developer_assignment': get_assignment_df(new_data, developers['all'], 'game', 'developer'),
         'game': process_data(new_data, GAME_DATA_TRANSLATION)
     }
