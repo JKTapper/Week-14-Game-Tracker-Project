@@ -31,3 +31,8 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+
+variable "lambda_image_uri" {
+  description = "ECR image URI"
+}
