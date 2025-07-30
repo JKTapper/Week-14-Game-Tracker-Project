@@ -6,12 +6,9 @@ import logging
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
-import pandas as pd
 import awswrangler as wr
-from load import get_session
+from load import get_session, S3_PATH
 
-BUCKET = 'c18-game-tracker-s3'
-S3_PATH = f"s3://{BUCKET}/input/"
 STEAM_URL = "https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english"
 
 
@@ -23,7 +20,7 @@ def get_existing_games(path: str, session) -> list[str]:
                                 'app_id'], boto3_session=session)
         return df['app_id'].astype(str).tolist()
     except Exception as e:
-        logging.error("No existing data found in S3:", e)
+        logging.error(f"No existing data found in S3: {e}")
         return []
 
 

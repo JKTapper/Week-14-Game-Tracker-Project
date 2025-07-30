@@ -1,13 +1,16 @@
+# pylint: disable=logging-fstring-interpolation
 '''Runs EL pipeline from Steam to S3 bucket'''
 import logging
-from extract import *
-from load import *
+from extract import (STEAM_URL, get_existing_games, get_html,
+                     parse_games_bs, iterate_through_scraped_games)
+from load import S3_PATH, get_session, add_time_partitioning, upload_to_s3
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
 def run_pipeline():
+    '''Runs pipeline that extracts steam data and loads data into S3'''
     # Connect to S3 and get existing 'app_id's
     pipeline_session = get_session()
     existing_games = get_existing_games(S3_PATH, pipeline_session)
