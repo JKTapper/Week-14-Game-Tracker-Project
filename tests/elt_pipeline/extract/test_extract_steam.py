@@ -72,7 +72,7 @@ def test_parse_games_bs_empty_html():
 
 def test_get_steam_game_details_success(requests_mock, example_steam_api):
     """
-    Tests get_steam_game_details_success returns the correct dict when given valid data.
+    Tests get_steam_game_details returns the correct dict when given valid data.
     """
     app_id = 10
     url = f"https://store.steampowered.com/api/appdetails?appids={app_id}"
@@ -94,7 +94,7 @@ def test_get_steam_game_details_success(requests_mock, example_steam_api):
 
 def test_get_steam_game_details_not_found(example_failure_html):
     """
-    Tests get_data_from_endpoint function returns correct error
+    Tests get_steam_game_details function returns correct error
     """
     with requests_mock.Mocker() as mocker:
         mocker.get("https://store.steampowered.com/api/appdetails?appids=1",
@@ -106,7 +106,7 @@ def test_get_steam_game_details_not_found(example_failure_html):
 
 def test_get_steam_game_details_network_error(requests_mock):
     """
-    Tests get_data_from_endpoint returns the expected error when a network exception occurs.
+    Tests get_steam_game_details returns the expected error when a network exception occurs.
     """
     app_id = 10
     url = f"https://store.steampowered.com/api/appdetails?appids={app_id}"
