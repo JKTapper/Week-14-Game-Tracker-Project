@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from src.elt_pipeline.transform.transform import get_assignment_df
+from src.elt_pipeline.transform.transform import get_assignment_df, process_data, extract_memory_requirements
 
 get_assignment_df_test_data = [(
     pd.DataFrame({
@@ -25,3 +25,42 @@ get_assignment_df_test_data = [(
 def test_get_assignment_df(main_df, reference_df, main_df_name, reference_df_name, assignment_df):
     assert get_assignment_df(main_df, reference_df,
                              main_df_name, reference_df_name).equals(assignment_df)
+
+
+process_data_test_data = [
+    (pd.DataFrame({
+        "Test": [1, 2, 3],
+        "Unwanted": [4, 5, 6],
+        "keeps": [7, 8, 9]
+    }), [
+        {'old_name': 'Test', 'new_name': 'test', 'translation': lambda x: 2*x},
+        {'name': 'keeps', 'translation': str},
+        {'name': 'ten', 'value': 10}
+    ],
+        pd.DataFrame({
+            "test": [2, 4, 6],
+            "keeps": ['7', '8', '9'],
+            "ten": [10, 10, 10]
+        }))
+
+]
+
+
+@pytest.mark.parametrize("unprocessed_info,config,processed_info", process_data_test_data)
+def test_process_data(unprocessed_info, config, processed_info):
+    assert process_data(unprocessed_info, config).equals(processed_info)
+
+
+extract_memory_requirements_test_data = [
+    (
+        {"minimum": "<strong>Minimum:<\/strong><br><ul class=\"bb_ul\"><li><strong>OS:<\/strong> Windows 10\/11<br><\/li><li><strong>Processor:<\/strong> 1.8+ GHz or better<br><\/li><li><strong>Memory:<\/strong> 1 GB RAM<br><\/li><li><strong>Graphics:<\/strong> Intel UHD Graphics 620 or better<br><\/li><li><strong>Storage:<\/strong> 1 GB available space<\/li><\/ul>"},
+        '1 GB'
+    )
+
+]
+
+
+@pytest.mark.parametrize("requirements,memory_requirements", extract_memory_requirements_test_data)
+def test_extract_memory_requirements(requirements, memory_requirements):
+    assert extract_memory_requirements(
+        requirements) == memory_requirements
