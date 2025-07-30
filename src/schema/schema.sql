@@ -1,0 +1,102 @@
+-- Drop tables in reverse dependency order
+DROP TABLE IF EXISTS video;
+DROP TABLE IF EXISTS image;
+DROP TABLE IF EXISTS genre_assignment;
+DROP TABLE IF EXISTS developer_assignment;
+DROP TABLE IF EXISTS publisher_assignment;
+DROP TABLE IF EXISTS game;
+DROP TABLE IF EXISTS store;
+DROP TABLE IF EXISTS genre;
+DROP TABLE IF EXISTS publisher;
+DROP TABLE IF EXISTS developer;
+
+-- Create publisher
+CREATE TABLE publisher (
+    publisher_id INT,
+    publisher_name TEXT NOT NULL UNIQUE,
+    PRIMARY KEY (publisher_id)
+);
+
+-- Create developer
+CREATE TABLE developer (
+    developer_id INT,
+    developer_name TEXT NOT NULL UNIQUE,
+    PRIMARY KEY (developer_id)
+);
+
+-- Create genre
+CREATE TABLE genre (
+    genre_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    genre_name TEXT NOT NULL
+);
+
+-- Create store
+CREATE TABLE store (
+    store_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    store_name TEXT NOT NULL UNIQUE
+);
+
+-- Create game
+CREATE TABLE game (
+    game_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    game_name TEXT NOT NULL,
+    app_id INT UNIQUE NOT NULL,
+    store_id INT NOT NULL,
+    release_date DATE,
+    game_description TEXT,
+    recent_reviews_summary TEXT,
+    os_requirements TEXT,
+    storage_requirements TEXT,
+    price FLOAT,
+    FOREIGN KEY (store_id) REFERENCES store (store_id)
+);
+
+-- Game-Genre relationship
+CREATE TABLE genre_assignment (
+    genre_assignment_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    genre_id INT NOT NULL,
+    game_id INT NOT NULL,
+    FOREIGN KEY (genre_id) REFERENCES genre (genre_id),
+    FOREIGN KEY (game_id) REFERENCES game (game_id)
+);
+
+-- Game-Developer relationship
+CREATE TABLE developer_assignment (
+    developer_assignment_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    developer_id INT NOT NULL,
+    game_id INT NOT NULL,
+    FOREIGN KEY (developer_id) REFERENCES developer (developer_id),
+    FOREIGN KEY (game_id) REFERENCES game (game_id)
+);
+
+-- Game-Publisher relationship
+CREATE TABLE publisher_assignment (
+    publisher_assignment_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    publisher_id INT NOT NULL,
+    game_id INT NOT NULL,
+    FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id),
+    FOREIGN KEY (game_id) REFERENCES game (game_id)
+);
+
+-- Game Images
+CREATE TABLE image (
+    image_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    url_image TEXT NOT NULL UNIQUE,
+    game_id INT,
+    FOREIGN KEY (game_id) REFERENCES game (game_id)
+);
+
+-- Game Videos
+CREATE TABLE video (
+    video_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    url_video TEXT NOT NULL UNIQUE,
+    game_id INT,
+    FOREIGN KEY (game_id) REFERENCES game (game_id)
+);
+
+-- Seed store table
+INSERT INTO store (store_name)
+VALUES
+    ('steam'),
+    ('epic'),
+    ('gog');
