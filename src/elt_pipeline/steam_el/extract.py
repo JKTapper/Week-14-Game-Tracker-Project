@@ -2,6 +2,7 @@
 PC games and stores all scraped games in a json list.
 Takes json list of newly scraped games, requests data from API
 and adds supplementary data to the json list.'''
+import logging
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
@@ -22,7 +23,7 @@ def get_existing_games(path: str, session) -> list[str]:
                                 'app_id'], boto3_session=session)
         return df['app_id'].astype(str).tolist()
     except Exception as e:
-        print("No existing data found in S3:", e)
+        logging.error("No existing data found in S3:", e)
         return []
 
 
@@ -112,7 +113,5 @@ if __name__ == "__main__":
     scraped_games = parse_games_bs(steam_html)
     new_games = [
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
-    print(new_games, '\n')
 
     full_game_data = iterate_through_scraped_games(new_games)
-    print(full_game_data)
