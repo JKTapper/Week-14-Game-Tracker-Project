@@ -1,29 +1,37 @@
 -- Drop tables in reverse dependency order
 DROP TABLE IF EXISTS video;
+
 DROP TABLE IF EXISTS image;
+
 DROP TABLE IF EXISTS genre_assignment;
+
 DROP TABLE IF EXISTS developer_assignment;
+
 DROP TABLE IF EXISTS publisher_assignment;
+
 DROP TABLE IF EXISTS game;
+
 DROP TABLE IF EXISTS store;
+
 DROP TABLE IF EXISTS genre;
+
 DROP TABLE IF EXISTS publisher;
+
 DROP TABLE IF EXISTS developer;
 
 -- Create publisher
 CREATE TABLE publisher (
-    publisher_id INT,
+    publisher_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     publisher_name TEXT NOT NULL UNIQUE,
     PRIMARY KEY (publisher_id)
 );
 
 -- Create developer
 CREATE TABLE developer (
-    developer_id INT,
+    developer_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     developer_name TEXT NOT NULL UNIQUE,
     PRIMARY KEY (developer_id)
 );
-
 -- Create genre
 CREATE TABLE genre (
     genre_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -95,8 +103,8 @@ CREATE TABLE video (
 );
 
 -- Seed store table
-INSERT INTO store (store_name)
-VALUES
-    ('steam'),
+INSERT INTO
+    store (store_name)
+VALUES ('steam'),
     ('epic'),
     ('gog');
