@@ -1,3 +1,4 @@
+# pylint: skip-file
 """
 Defines shared fixtures for the pytest test suite.
 """

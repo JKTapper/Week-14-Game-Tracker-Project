@@ -17,3 +17,4 @@ dotenv
 pandas
 boto3
 awswrangler
+requests_mock
