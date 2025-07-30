@@ -2,7 +2,7 @@
 import pytest
 import pandas as pd
 from unittest.mock import patch
-from src.elt_pipeline.load.load import get_session, add_time_partitioning, upload_to_s3
+from src.elt_pipeline.steam_el.load import get_session, add_time_partitioning, upload_to_s3
 
 # Sample input data
 SAMPLE_DATA = [
@@ -54,7 +54,7 @@ def test_add_time_partitioning():
     assert df["day"].iloc[0] == 28
 
 
-@patch("src.elt_pipeline.load.load.wr.s3.to_parquet")
+@patch("src.elt_pipeline.steam_el.load.wr.s3.to_parquet")
 def test_upload_to_s3_calls_wrangler(mock_to_parquet):
     '''Test that upload_to_s3 calls awswrangler's to_parquet method with correct parameters.
     Uses patch to mock the S3 upload call, avoiding actual S3 interaction.'''
