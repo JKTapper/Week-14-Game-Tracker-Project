@@ -26,9 +26,12 @@ def run_pipeline():
     upload_to_s3(df, pipeline_session)
 
 
-# Testing
-existing_games = get_existing_games(S3_PATH, get_session())
-print(existing_games)
-print(len(existing_games))
-
-# run_pipeline()
+def handler(event, context):
+    '''Handler function for lambda function'''
+    try:
+        run_pipeline()
+        print(f'{event}: Lambda time remaining in MS:',
+              context.get_remaining_time_in_millis())
+        return {'statusCode': 200}
+    except (TypeError, ValueError, IndexError) as e:
+        return {'statusCode': 500, 'error': str(e)}
