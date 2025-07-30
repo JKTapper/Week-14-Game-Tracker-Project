@@ -3,7 +3,7 @@ Transforms the data stored in the S3 to
 be in the right format to be loaded into the RDS
 """
 from os import environ
-from datetime import datetime
+from datetime import datetime, date
 import re
 import pandas as pd
 import awswrangler as wr
@@ -126,13 +126,24 @@ def extract_memory_requirements(requirements: dict) -> str:
         r'(?<=<strong>Storage:<\\\/strong> ).+?(?= available space)',
         requirements['minimum']
     ).group()
+    return new_dataframe
+
+
+def interpret_release_date(release_date: str) -> date:
+    """
+    Interprets the release date as a date object
+    """
+    try:
+        return datetime.strptime(release_date, '%d %b, %Y').date()
+    except ValueError:
+        return None
 
 
 STEAM_STORE_ID = 1
 
 GAME_DATA_TRANSLATION = [
     {'old_name': 'release', 'new_name': 'release_date',
-        'translation': lambda x: datetime.strptime(x, '%d %b, %Y')},
+        'translation': interpret_release_date},
     {'name': 'description',
         'translation': lambda x: x},
     {'old_name': 'requirements', 'new_name': 'storage_requirements',
