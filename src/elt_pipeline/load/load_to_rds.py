@@ -17,7 +17,6 @@ DB_NAME = os.getenv("DB_NAME")
 DB_USERNAME = os.getenv("DB_USERNAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = int(os.getenv("DB_PORT"))
-# DB_SCHEMA = os.getenv("DB_SCHEMA")
 
 
 def get_engine() -> Engine:
@@ -34,10 +33,7 @@ def get_engine() -> Engine:
 def load_data_into_database(games_df: pd.DataFrame,
                             publisher_df: pd.DataFrame,
                             developer_df: pd.DataFrame,
-                            genre_df: pd.DataFrame,
-                            genre_assignment_df: pd.DataFrame,
-                            developer_assignment_df: pd.DataFrame,
-                            publisher_assignment_df: pd.DataFrame,) -> None:
+                            genre_df: pd.DataFrame) -> None:
     """Takes data and loads it into each table"""
     engine = get_engine()
 
@@ -118,7 +114,11 @@ def upload_stores(conn: Connection, stores_df: pd.DataFrame) -> dict:
     return store_cache
 
 
-def upload_references_to_games(conn: Connection, df: pd.DataFrame, col: str, table_name: str, pk_name: str) -> dict:
+def upload_references_to_games(conn: Connection,
+                               df: pd.DataFrame,
+                               col: str,
+                               table_name: str,
+                               pk_name: str) -> dict:
     """Helps with loading into publisher, developer tables"""
 
     for _, row in df.iterrows():
@@ -140,9 +140,12 @@ def upload_references_to_games(conn: Connection, df: pd.DataFrame, col: str, tab
 def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) -> dict:
     """Uploads games to games tables and returns game_id cache"""
     for _, row in games_df.iterrows():
+
         store_name = row.get(
-            "store_name") if "store_name" in games_df.columns else None
-        store_id = store_cache.get(store_name) if store_name else None
+            "store_name") if "store_name" in games_df.columns else 1
+        # Currently defaults to steam if there is no store name provided
+        store_id = store_cache.get(store_name) if store_name else 1
+
         conn.execute(
             text("""
                 INSERT INTO game
@@ -156,7 +159,8 @@ def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) ->
             {
                 "name": row["game_name"],
                 "app":  row["app_id"],
-                "store": 1,
+                "store": store_id,
+                #  Will need changing when updating to store data from multiple storefronts
                 "rel":   row.get("release_date"),
                 "desc":  row.get("game_description"),
                 "rev":   row.get("recent_reviews_summary"),
@@ -180,17 +184,11 @@ def main() -> None:
     publisher_df = data["publisher"]
     developer_df = data["developer"]
     genre_df = data["genre"]
-    genre_assignment_df = data["genre_assignment"]
-    developer_assignment_df = data["developer_assignment"]
-    publisher_assignment_df = data["publisher_assignment"]
 
     load_data_into_database(games_df,
                             publisher_df,
                             developer_df,
-                            genre_df,
-                            genre_assignment_df,
-                            developer_assignment_df,
-                            publisher_assignment_df)
+                            genre_df)
 
 
 if __name__ == "__main__":
