@@ -1,8 +1,11 @@
 """Script to take transformed data and stores into our RDS Postgres Database"""
+
 import os
 from dotenv import load_dotenv
 import pandas as pd
-from sqlalchemy import create_engine, engine, Engine, text, Connection
+from sqlalchemy import create_engine, engine, text, Connection
+
+from transform import transform_s3_steam_data
 
 load_dotenv()
 AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
@@ -27,83 +30,57 @@ def get_engine() -> engine:
     return engine
 
 
-def load_data_into_database(full_df: pd.DataFrame, drop_table: bool = False) -> None:
+def load_data_into_database(games_df: pd.DataFrame,
+                            publisher_df: pd.DataFrame,
+                            developer_df: pd.DataFrame,
+                            genre_df: pd.DataFrame,
+                            genre_assignment_df: pd.DataFrame,
+                            developer_assignment_df: pd.DataFrame,
+                            publisher_assignment_df: pd.DataFrame,) -> None:
     """Takes data and loads it into each table"""
     engine = get_engine()
 
-    if drop_table:
-        exists = "replace"
-    else:
-        exists = "append"
-
-    publisher_df = full_df[["publisher"]].dropna().drop_duplicates()
-    developer_df = full_df[["developer"]].dropna().drop_duplicates()
-    genre_df = full_df[["genre"]].dropna().drop_duplicates()
-    stores_df = full_df[["store_name"]].dropna().drop_duplicates()
-    games_df = full_df[
-        [
-            "game_name", "app_id", "store_name", "release_date",
-            "game_description", "recent_reviews_summary",
-            "os_requirements", "storage_requirements", "price"
-        ]
-    ].drop_duplicates(subset=["app_id"])
-
-    assign_genres = (
-        full_df[["game_name", "genre"]]
-        .dropna()
-        .drop_duplicates()
-    )
-
-    assign_developers = (
-        full_df[["game_name", "developer"]]
-        .dropna()
-        .drop_duplicates()
-    )
-
-    assign_publishers = (
-        full_df[["game_name", "publisher"]]
-        .dropna()
-        .drop_duplicates()
-    )
+    stores_df = games_df[["store_name"]].dropna(
+    ).drop_duplicates().reset_index(drop=True)
 
     with engine.begin() as conn:
         store_cache = upload_stores(conn, stores_df)
         publisher_cache = upload_references_to_games(
-            conn, publisher_df, "publisher", "publisher", "publisher_id")
+            conn, publisher_df, "publisher_name", "publisher", "publisher_id")
         dev_cache = upload_references_to_games(
-            conn, developer_df, "developer", "developer", "developer_id")
+            conn, developer_df, "developer_name", "developer", "developer_id")
         genre_cache = upload_references_to_games(
-            conn, genre_df,     "genre",     "genre",     "genre_id")
+            conn, genre_df,     "genre_name",     "genre",     "genre_id")
         games_cache = games_upload(conn, games_df, store_cache)
 
-        for _, row in assign_genres.iterrows():
+        for _, row in genre_assignment_df.iterrows():
             conn.execute(
                 text("""
                 INSERT INTO genre_assignment (genre_id, game_id)
                 VALUES (:g_id, :gm_id)
                 ON CONFLICT DO NOTHING
                 """),
-                {"g_id": genre_cache[row["genre"]],
+                {"g_id": genre_cache[row["genre_name"]],
                  "gm_id": games_cache[row["app_id"]]},
             )
-        for _, row in assign_developers.iterrows():
+        for _, row in developer_assignment_df.iterrows():
             conn.execute(
                 text("""
                 INSERT INTO developer_assignment (developer_id, game_id)
                 VALUES (:d_id, :gm_id)
                 ON CONFLICT DO NOTHING
                 """),
-                {"d_id": dev_cache[row["developer"]],
+                {"d_id": dev_cache[row["developer_name"]],
                  "gm_id": games_cache[row["app_id"]]},
             )
-        for _, row in assign_publishers.iterrows():
+        for _, row in publisher_assignment_df.iterrows():
             conn.execute(
                 text("""
                 INSERT INTO publisher_assignment (publisher_id, game_id)
                 VALUES (:p_id, :gm_id)
                 ON CONFLICT DO NOTHING
                 """),
-                {"p_id": publisher_cache[row["publisher"]],
+                {"p_id": publisher_cache[row["publisher_name"]],
                  "gm_id": games_cache[row["app_id"]]},
             )
 
@@ -181,29 +158,24 @@ def games_upload(conn: Connection, store_cache: dict, games_df: pd.DataFrame) ->
 
 def main() -> None:
     """Main to run other functions"""
-    fake = pd.DataFrame([
-        {
-            "game_name": "Test Game A",
-            "app_id": 111, "store_name": "steam",
-            "release_date": "2025-01-01",
-            "game_description": "…", "recent_reviews_summary": "…",
-            "os_requirements": "…", "storage_requirements": "…",
-            "price": 9.99, "genre": "Indie",
-            "developer": "DevCo", "publisher": "PubCo"
-        },
-        {
-            "game_name": "Test Game B",
-            "app_id": 222, "store_name": "gog",
-            "genre": "RPG", "developer": "DevCo",
-            "publisher": "PubCo"
-        },
-    ])
 
-    # data = ...  #  From transform script
+    data = transform_s3_steam_data()
 
-    full_df = pd.DataFrame.from_records(fake)
+    games_df = data["game"]
+    publisher_df = data["publisher"]
+    developer_df = data["developer"]
+    genre_df = data["genre"]
+    genre_assignment_df = data["genre_assignment"]
+    developer_assignment_df = data["developer_assignment"]
+    publisher_assignment_df = data["publisher_assignment"]
 
-    load_data_into_database(full_df)
+    load_data_into_database(games_df,
+                            publisher_df,
+                            developer_df,
+                            genre_df,
+                            genre_assignment_df,
+                            developer_assignment_df,
+                            publisher_assignment_df)
 
 
 if __name__ == "__main__":

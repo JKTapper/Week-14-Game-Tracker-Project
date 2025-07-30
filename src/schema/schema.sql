@@ -1,13 +1,22 @@
 -- Drop tables in reverse dependency order
 DROP TABLE IF EXISTS video;
+
 DROP TABLE IF EXISTS image;
+
 DROP TABLE IF EXISTS genre_assignment;
+
 DROP TABLE IF EXISTS developer_assignment;
+
 DROP TABLE IF EXISTS publisher_assignment;
+
 DROP TABLE IF EXISTS game;
+
 DROP TABLE IF EXISTS store;
+
 DROP TABLE IF EXISTS genre;
+
 DROP TABLE IF EXISTS publisher;
+
 DROP TABLE IF EXISTS developer;
 
 -- Create publisher
@@ -95,8 +104,8 @@ CREATE TABLE video (
 );
 
 -- Seed store table
-INSERT INTO store (store_name)
-VALUES
-    ('steam'),
+INSERT INTO
+    store (store_name)
+VALUES ('steam'),
     ('epic'),
     ('gog');
