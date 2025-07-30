@@ -59,7 +59,8 @@ def test_upload_to_s3_calls_wrangler(mock_to_parquet):
     '''Test that upload_to_s3 calls awswrangler's to_parquet method with correct parameters.
     Uses patch to mock the S3 upload call, avoiding actual S3 interaction.'''
     df = add_time_partitioning(SAMPLE_DATA)
-    upload_to_s3(df)
+    session = get_session()
+    upload_to_s3(df, session)
 
     mock_to_parquet.assert_called_once()
     args, kwargs = mock_to_parquet.call_args
