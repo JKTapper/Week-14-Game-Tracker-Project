@@ -192,7 +192,6 @@ def transform_s3_steam_data():
 
     new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])]
 
-    # print(new_data[['genres', 'publishers', 'developers']].head())
     game_data = process_data(new_data, GAME_DATA_TRANSLATION)
     game_data["game_id"] = list(range(
         existing_data["game_id"].max() + 1 if not existing_data.empty else 1,
@@ -209,6 +208,11 @@ def transform_s3_steam_data():
     developers = get_reference_data(
         new_data, read_db_table_into_df('developer'), 'developer')
 
+    game_data = game_data.merge(
+        new_data[['app_id', 'genres', 'developers', 'publishers', 'game_id']],
+        on=['app_id', 'game_id'],
+        how='left'
+    )
     return {
         'genre': genres['new'],
         'publisher': publishers['new'],

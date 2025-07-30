@@ -36,7 +36,7 @@ CREATE TABLE developer (
 -- Create genre
 CREATE TABLE genre (
     genre_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    genre_name TEXT NOT NULL
+    genre_name TEXT NOT NULL UNIQUE
 );
 
 -- Create store

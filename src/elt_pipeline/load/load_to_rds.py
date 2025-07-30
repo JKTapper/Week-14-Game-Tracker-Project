@@ -53,40 +53,49 @@ def load_data_into_database(games_df: pd.DataFrame,
             conn, publisher_df, "publisher_name", "publisher", "publisher_id")
         dev_cache = upload_references_to_games(
             conn, developer_df, "developer_name", "developer", "developer_id")
-        genre_cache = upload_references_to_games(
-            conn, genre_df,     "genre_name",     "genre",     "genre_id")
+
+        for _, row in genre_df.iterrows():
+            conn.execute(text("""
+                INSERT INTO genre (genre_name)
+                VALUES (:name)
+                ON CONFLICT (genre_name) DO NOTHING
+            """), {"name": row["genre_name"]})
+
+        rows = conn.execute(
+            text("SELECT genre_name, genre_id FROM genre")).mappings()
+        genre_cache = {row["genre_name"]: row["genre_id"] for row in rows}
+
         games_cache = games_upload(conn, store_cache, games_df)
 
-        for _, row in genre_assignment_df.iterrows():
-            conn.execute(
-                text("""
-                INSERT INTO genre_assignment (genre_id, game_id)
-                VALUES (:g_id, :gm_id)
-                ON CONFLICT DO NOTHING
-                """),
-                {"g_id": genre_cache[row["genre_name"]],
-                 "gm_id": games_cache[row["app_id"]]},
-            )
-        for _, row in developer_assignment_df.iterrows():
-            conn.execute(
-                text("""
-                INSERT INTO developer_assignment (developer_id, game_id)
-                VALUES (:d_id, :gm_id)
-                ON CONFLICT DO NOTHING
-                """),
-                {"d_id": dev_cache[row["developer_name"]],
-                 "gm_id": games_cache[row["app_id"]]},
-            )
-        for _, row in publisher_assignment_df.iterrows():
-            conn.execute(
-                text("""
-                INSERT INTO publisher_assignment (publisher_id, game_id)
-                VALUES (:p_id, :gm_id)
-                ON CONFLICT DO NOTHING
-                """),
-                {"p_id": publisher_cache[row["publisher_name"]],
-                 "gm_id": games_cache[row["app_id"]]},
-            )
+        for _, game_row in games_df.iterrows():
+            db_game_id = games_cache[game_row["app_id"]]
+            for genre_name in game_row["genres"]:
+                conn.execute(text("""
+                    INSERT INTO genre_assignment (genre_id, game_id)
+                    VALUES (:g_id, :gm_id)
+                    ON CONFLICT DO NOTHING
+                """), {
+                    "g_id": genre_cache[genre_name],
+                    "gm_id": db_game_id
+                })
+            for dev_name in game_row.get("developers", []):
+                conn.execute(text("""
+                    INSERT INTO developer_assignment (developer_id, game_id)
+                    VALUES (:d_id, :gm_id)
+                    ON CONFLICT DO NOTHING
+                """), {
+                    "d_id": dev_cache[dev_name],
+                    "gm_id": db_game_id
+                })
+            for pub_name in game_row.get("publishers", []):
+                conn.execute(text("""
+                    INSERT INTO publisher_assignment (publisher_id, game_id)
+                    VALUES (:p_id, :gm_id)
+                    ON CONFLICT DO NOTHING
+                """), {
+                    "p_id": publisher_cache[pub_name],
+                    "gm_id": db_game_id
+                })
 
 
 def upload_stores(conn: Connection, stores_df: pd.DataFrame) -> dict:
@@ -110,23 +119,20 @@ def upload_stores(conn: Connection, stores_df: pd.DataFrame) -> dict:
 
 
 def upload_references_to_games(conn: Connection, df: pd.DataFrame, col: str, table_name: str, pk_name: str) -> dict:
-    """Helps with loading into publisher, developer and genre tables"""
+    """Helps with loading into publisher, developer tables"""
 
-    for name in df[col]:
+    for _, row in df.iterrows():
         conn.execute(text(
             f"""
-                INSERT INTO {table_name} ({col})
-                VALUES (:name)
-                ON CONFLICT ({col}) DO NOTHING
+            INSERT INTO {table_name} ({pk_name}, {col})
+            VALUES (:id, :name)
+            ON CONFLICT ({col}) DO NOTHING
             """
-        ),
-            {"name": name}
-        )
+        ), {"id": int(row[pk_name]), "name": row[col]})
 
-    # Uploading
     rows = conn.execute(text(
         f"SELECT {col}, {pk_name} FROM {table_name}"
-    ))
+    )).mappings()
 
     return {row[col]: getattr(row, pk_name) for row in rows}
 
@@ -170,6 +176,7 @@ def main() -> None:
     data = transform_s3_steam_data()
 
     games_df = data["game"]
+    games_df["app_id"] = games_df["app_id"].astype(int)
     publisher_df = data["publisher"]
     developer_df = data["developer"]
     genre_df = data["genre"]
