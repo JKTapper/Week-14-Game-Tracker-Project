@@ -301,13 +301,10 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
             "game_id": row["game_id"],
             "game_name": row["game_name"],
             "app_id": row["app_id"],
-            "store_id": 1,
-            # This hardcodes for steam currently
+            "store_id": row["store_id"],
             "release_date": row["release_date"],
             "game_description": row["description"],
-            "recent_reviews_summary": None,
-            "os_requirements": None,
-            "storage_requirements": None,
+            "storage_requirements": row["storage_requirements"],
             "price": row["price"],
             "currency": row["currency"],
         })
