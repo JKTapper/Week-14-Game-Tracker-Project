@@ -1,10 +1,14 @@
+"""
+This module contains visualisation and metric functions for the Game Tracker Dashboard
+"""
 import pandas as pd
 import streamlit as st
 import altair as alt
 from database import fetch_game_data
 
 
-def find_mean_price():
+def find_mean_price() -> str:
+    """Finds and returns the mean price of all games in the entire database"""
     query = """
             SELECT AVG(price) as avg_price
             FROM game
@@ -19,20 +23,20 @@ def find_mean_price():
     return average_price
 
 
-def find_new_release_count(range):
+def find_new_release_count(day_range):
     """
     Finds the number of games released in either the last 7 days or last 30 days
 
     Parameters:
-        range: A number indicating how many days worth of releases should be counted
+        day_range: A number indicating how many days worth of releases should be counted
 
     Returns:
-        A number representing the total number of games released in this time range
+        A number representing the total number of games released in this time day_range
     """
     query = f"""
             SELECT count(game_name) as game_count
             FROM game
-            WHERE release_date >= NOW() - INTERVAL '{range} days'
+            WHERE release_date >= NOW() - INTERVAL '{day_range} days'
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)

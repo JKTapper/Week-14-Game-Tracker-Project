@@ -1,5 +1,11 @@
+"""
+This module produces a Streamlit dashboard for tracking new game releases, displaying metrics
+and charts
+"""
+
 import streamlit as st
-from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, find_mean_price, find_new_release_count, find_free_count
+from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
+    find_mean_price, find_new_release_count, find_free_count
 
 
 st.set_page_config(page_title="Game Tracker Dashboard",

@@ -1,8 +1,13 @@
+"""
+This module contains functions for connection and data fetching for an RDS.
+
+"""
+
+import os
+import logging
 import psycopg2
 import pandas as pd
-import os
 from dotenv import load_dotenv
-import logging
 import streamlit as st
 
 logging.basicConfig(
@@ -27,7 +32,7 @@ def get_db_connection():
         logger.info("Successfully connected to database.")
         return conn
     except Exception as e:
-        logger.error(f"Error connecting to database: {e}")
+        logger.error("Error connecting to database: %s", e)
         raise
 
 
@@ -36,5 +41,5 @@ def fetch_game_data(query) -> pd.DataFrame:
     """Fetch game data from RDS and return as pandas DataFrame."""
     with get_db_connection() as conn:
         df = pd.read_sql(query, conn)
-        logger.info(f"Fetched {len(df)} rows from database.")
+        logger.info("Fetched %s rows from database.", len(df))
     return df
