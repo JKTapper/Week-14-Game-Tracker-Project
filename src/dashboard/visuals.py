@@ -12,13 +12,17 @@ def find_mean_price() -> str:
     query = """
             SELECT AVG(price) as avg_price
             FROM game
+            where price > 0
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)
 
     avg_price_value = price_df['avg_price'].iloc[0]
 
-    average_price = f"£{avg_price_value / 10000:.2f}"
+    if avg_price_value is not None:
+        average_price = f"£{avg_price_value / 10000:.2f}"
+    else:
+        average_price = "N/A"
 
     return average_price
 
