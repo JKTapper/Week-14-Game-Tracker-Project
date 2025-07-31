@@ -105,6 +105,22 @@ CREATE TABLE video (
     FOREIGN KEY (game_id) REFERENCES game (game_id)
 );
 
+-- Subscribers
+CREATE TABLE subscriber (
+    subscriber_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    subscriber_name TEXT NOT NULL,
+    subscriber_email TEXT NOT NULL UNIQUE,
+    FOREIGN KEY (game_id) REFERENCES game (game_id)
+);
+
+-- Subscriber-genre relationship
+CREATE TABLE subscriber_genre_assignment (
+    subscriber_genre_assignment_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    subscriber_id INT NOT NULL,
+    genre_id INT NOT NULL,
+    FOREIGN KEY (subscriber_id) REFERENCES subscriber (subscriber_id),
+    FOREIGN KEY (genre_id) REFERENCES genre (genre_id)
+
 -- Seed store table
 INSERT INTO
     store (store_name)
