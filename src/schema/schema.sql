@@ -47,7 +47,7 @@ CREATE TABLE game (
     recent_reviews_summary TEXT,
     os_requirements TEXT,
     storage_requirements TEXT,
-    price FLOAT,
+    price INT,
     FOREIGN KEY (store_id) REFERENCES store (store_id)
 );
 
