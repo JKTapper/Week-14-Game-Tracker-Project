@@ -7,9 +7,19 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
 import awswrangler as wr
-from src.elt_pipeline.steam_el.load import get_session, S3_PATH
+import boto3
 
 STEAM_URL = "https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english"
+S3_PATH = "s3://c18-game-tracker-s3/input/"
+
+
+def get_session() -> boto3.Session:
+    '''Creates session with credentials in environment'''
+    session = boto3.Session()
+    creds = session.get_credentials()
+    if creds is None:
+        raise RuntimeError("Error: AWS credentials not found.")
+    return session
 
 
 def get_existing_games(path: str, session) -> list[str]:
