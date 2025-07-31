@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from psycopg2 import connect
 from psycopg2.extensions import connection
 from psycopg2.extras import RealDictCursor
+import numpy as np
 
 
 BUCKET = 'c18-game-tracker-s3'
@@ -33,11 +34,13 @@ def get_db_connection() -> connection:
 
 def read_db_table_into_df(table_name: str) -> pd.DataFrame:
     """Returns the data in an RDS table as a dataframe"""
+    conn = None
     try:
         conn = get_db_connection()
         return pd.read_sql(f"SELECT * FROM {table_name}", conn)
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 def get_reference_data(raw_data: pd.DataFrame,
@@ -47,10 +50,28 @@ def get_reference_data(raw_data: pd.DataFrame,
     Combines incoming data with old data to create up to date
     dataframe representing secondary tables like genre or developer
     """
-    new_data = list(set(raw_data[table_name + 's'].sum()))
+    id_col = f"{table_name}_id"
+
+    if id_col in existing_data.columns:
+        existing_data[id_col] = (
+            pd.to_numeric(existing_data[id_col], errors='coerce')
+              .fillna(0)
+              .astype(int)
+        )
+    else:
+        existing_data[id_col] = pd.Series(dtype=int)
+
+    valid_lists = raw_data[table_name +
+                           's'].apply(lambda x: isinstance(x, (list, np.ndarray)))
+    cleaned_column = raw_data.loc[valid_lists, table_name + 's']
+    cleaned_column = [
+        item for sublist in cleaned_column for item in sublist]
+
+    new_data = list(set(cleaned_column))
+
     added_data = list(
         filter(lambda x: not x in existing_data[table_name + '_name'].unique(), new_data))
-    highest_existing_id = max(existing_data[table_name + '_id'])
+    highest_existing_id = max(existing_data[table_name + '_id'], default=0)
     data_to_add_to_rds = pd.DataFrame({
         table_name + '_name': added_data,
         table_name + '_id': list(range(
@@ -58,6 +79,7 @@ def get_reference_data(raw_data: pd.DataFrame,
             highest_existing_id + len(added_data) + 1
         ))
     })
+
     return {
         'new': data_to_add_to_rds,
         'all': pd.concat([existing_data, data_to_add_to_rds])
@@ -122,17 +144,27 @@ def extract_memory_requirements(requirements: dict) -> str:
     Extracts the memory requirements from the
     requirements dictionary returned by the API
     """
-    return re.search(
-        r'(?<=<strong>Storage:<\\\/strong> ).+?(?= available space)',
-        requirements['minimum']
-    ).group()
-    return new_dataframe
+    if not isinstance(requirements, dict):
+        return None
+    try:
+        match = re.search(
+            r'(?<=<strong>Storage:<\\\/strong> ).+?(?= available space)',
+            requirements['minimum']
+        ).group()
+        if match:
+            return match
+        else:
+            return None
+    except Exception:
+        return None
 
 
 def interpret_release_date(release_date: str) -> date:
     """
     Interprets the release date as a date object
     """
+    if isinstance(release_date, (datetime, pd.Timestamp)):
+        return release_date.date()
     try:
         return datetime.strptime(release_date, '%d %b, %Y').date()
     except ValueError:
@@ -149,7 +181,7 @@ GAME_DATA_TRANSLATION = [
     {'old_name': 'requirements', 'new_name': 'storage_requirements',
         'translation': extract_memory_requirements},
     {'name': 'price',
-        'translation': lambda x: x},
+        'translation': lambda x: float(x) if pd.notna(x) else 0},
     {'old_name': 'title', 'new_name': 'game_name',
         'translation': lambda x: x},
     {'name': 'app_id',
@@ -159,6 +191,27 @@ GAME_DATA_TRANSLATION = [
 ]
 
 
+def get_game_id(count: int) -> list[int]:
+    """Gets current game ids from database to help merge assignment tables"""
+    conn = get_db_connection()
+
+    try:
+        cur = conn.cursor(cursor_factory=None)
+        cur.execute(f"""
+            SELECT nextval(pg_get_serial_sequence('game','game_id'))
+            FROM generate_series(1, %s)
+        """, (count,))
+
+        rows = cur.fetchall(
+        )
+
+        new_ids = [row["nextval"] for row in rows]
+    finally:
+        conn.close()
+
+    return new_ids
+
+
 def transform_s3_steam_data():
     """
     Reads data in the S3, discards any data already in the RDS and
@@ -166,13 +219,25 @@ def transform_s3_steam_data():
     """
     raw_df = wr.s3.read_parquet(S3_PATH)
     existing_data = read_db_table_into_df('game')
-    new_data = raw_df[not raw_df['app_id'].isin(existing_data['app_id'])]
+    existing_data['game_id'] = pd.to_numeric(
+        existing_data['game_id'], errors='coerce').fillna(0).astype(int)
+
+    new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])]
+
+    game_data = process_data(new_data, GAME_DATA_TRANSLATION)
+
+    new_ids = get_game_id(len(new_data))
+    new_data["game_id"] = new_ids
+
+    game_data["game_id"] = new_ids
+
     genres = get_reference_data(
         new_data, read_db_table_into_df('genre'), 'genre')
     publishers = get_reference_data(
         new_data, read_db_table_into_df('publisher'), 'publisher')
     developers = get_reference_data(
         new_data, read_db_table_into_df('developer'), 'developer')
+
     return {
         'genre': genres['new'],
         'publisher': publishers['new'],
@@ -180,5 +245,5 @@ def transform_s3_steam_data():
         'genre_assignment': get_assignment_df(new_data, genres['all'], 'game', 'genre'),
         'publisher_assignment': get_assignment_df(new_data, publishers['all'], 'game', 'publisher'),
         'developer_assignment': get_assignment_df(new_data, developers['all'], 'game', 'developer'),
-        'game': process_data(new_data, GAME_DATA_TRANSLATION)
+        'game': game_data
     }
