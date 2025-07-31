@@ -37,3 +37,12 @@ SQLAlchemy==2.0.41
 typing_extensions==4.14.1
 tzdata==2025.2
 urllib3==2.5.0
+awswrangler
+pandas
+dotenv
+psycopg2-binary
+bs4
+requests
+boto3
+awswrangler
+requests_mock
