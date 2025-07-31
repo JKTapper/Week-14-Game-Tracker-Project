@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine, Engine, text, Connection
 
-from elt_pipeline.transform.transform import transform_s3_steam_data
+from src.elt_pipeline.transform.transform import transform_s3_steam_data
 
 
 load_dotenv()

@@ -65,7 +65,7 @@ def get_reference_data(raw_data: pd.DataFrame,
                            's'].apply(lambda x: isinstance(x, (list, np.ndarray)))
     cleaned_column = raw_data.loc[valid_lists, table_name + 's']
     cleaned_column = [
-        item for sublist in cleaned_column for item in sublist.tolist()]
+        item for sublist in cleaned_column for item in sublist]
 
     new_data = list(set(cleaned_column))
 

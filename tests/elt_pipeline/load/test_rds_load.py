@@ -10,12 +10,13 @@ import src.elt_pipeline.load.load_to_rds as loader
 @pytest.fixture
 def temp_engine():
     engine = create_engine("sqlite:///:memory:")
+    schema_sql = Path("src/schema/test_schema.sql").read_text()
 
-    schema_path_sql = Path("src/schema/test_schema.sql").read_text()
-
-    conn = engine.raw_connection()
-    with conn:
-        conn.executescript(schema_path_sql)
+    raw_conn = engine.raw_connection()
+    cursor = raw_conn.cursor()
+    cursor.executescript(schema_sql)
+    raw_conn.commit()
+    raw_conn.close()
 
     return engine
 
@@ -67,3 +68,107 @@ def test_load_data_into_database(monkeypatch, temp_engine):
             count = conn.execute(
                 text(f"SELECT COUNT(*) FROM {table}")).scalar_one()
             assert count == expected, f"Expected {expected} row(s) in {table}, found {count}"
+
+
+def test_game_data_is_correct(monkeypatch, temp_engine):
+    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+
+    games_df, publisher_df, developer_df, genre_df = fake_data()
+    loader.load_data_into_database(
+        games_df, publisher_df, developer_df, genre_df)
+
+    with temp_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT game_name, app_id, price FROM game")).fetchone()
+        assert result == ("Test Game", 42, 12.34)
+
+
+def test_publisher_data_is_correct(monkeypatch, temp_engine):
+    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+
+    games_df, publisher_df, developer_df, genre_df = fake_data()
+    loader.load_data_into_database(
+        games_df, publisher_df, developer_df, genre_df)
+
+    with temp_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT publisher_name FROM publisher")).fetchone()
+        assert result == ("Publisher Company", )
+
+
+def test_developer_data_is_correct(monkeypatch, temp_engine):
+    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+
+    games_df, publisher_df, developer_df, genre_df = fake_data()
+    loader.load_data_into_database(
+        games_df, publisher_df, developer_df, genre_df)
+
+    with temp_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT developer_name FROM developer")).fetchone()
+        assert result == ("Developer Company", )
+
+
+def test_genre_data_is_correct(monkeypatch, temp_engine):
+    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+
+    games_df, publisher_df, developer_df, genre_df = fake_data()
+    loader.load_data_into_database(
+        games_df, publisher_df, developer_df, genre_df)
+
+    with temp_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT genre_name FROM genre")).fetchone()
+        assert result == ("Indie", )
+
+
+def test_store_data_is_correct(monkeypatch, temp_engine):
+    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+
+    games_df, publisher_df, developer_df, genre_df = fake_data()
+    loader.load_data_into_database(
+        games_df, publisher_df, developer_df, genre_df)
+
+    with temp_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT store_name FROM store")).fetchone()
+        assert result == ("steam", )
+
+
+def test_genre_assign_data_is_correct(monkeypatch, temp_engine):
+    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+
+    games_df, publisher_df, developer_df, genre_df = fake_data()
+    loader.load_data_into_database(
+        games_df, publisher_df, developer_df, genre_df)
+
+    with temp_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT game_id, genre_id FROM genre_assignment")).fetchone()
+        assert result != None
+
+
+def test_developer_assign_is_correct(monkeypatch, temp_engine):
+    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+
+    games_df, publisher_df, developer_df, genre_df = fake_data()
+    loader.load_data_into_database(
+        games_df, publisher_df, developer_df, genre_df)
+
+    with temp_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT developer_id, game_id FROM developer_assignment")).fetchone()
+        assert result != None
+
+
+def test_publisher_assign_is_correct(monkeypatch, temp_engine):
+    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+
+    games_df, publisher_df, developer_df, genre_df = fake_data()
+    loader.load_data_into_database(
+        games_df, publisher_df, developer_df, genre_df)
+
+    with temp_engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT game_id, publisher_id FROM publisher_assignment")).fetchone()
+        assert result != None
