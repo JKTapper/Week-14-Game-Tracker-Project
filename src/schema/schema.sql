@@ -6,7 +6,6 @@ DROP TABLE IF EXISTS subscriber_developer_assignment;
 
 DROP TABLE IF EXISTS video;
 
-
 DROP TABLE IF EXISTS image;
 
 DROP TABLE IF EXISTS genre_assignment;
@@ -27,16 +26,16 @@ DROP TABLE IF EXISTS developer;
 
 -- Create publisher
 CREATE TABLE publisher (
-    publisher_id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    publisher_id INT PRIMARY KEY,
     publisher_name TEXT NOT NULL UNIQUE
 );
 
 -- Create developer
 CREATE TABLE developer (
-    developer_id INT,
-    developer_name TEXT NOT NULL UNIQUE,
-    PRIMARY KEY (developer_id)
+    developer_id INT PRIMARY KEY,
+    developer_name TEXT NOT NULL UNIQUE
 );
+
 -- Create genre
 CREATE TABLE genre (
     genre_id INT PRIMARY KEY,
