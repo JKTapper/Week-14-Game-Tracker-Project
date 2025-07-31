@@ -21,19 +21,19 @@ DROP TABLE IF EXISTS developer;
 
 -- Create publisher
 CREATE TABLE publisher (
-    publisher_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    publisher_id INT PRIMARY KEY,
     publisher_name TEXT NOT NULL UNIQUE
 );
 
 -- Create developer
 CREATE TABLE developer (
-    developer_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    developer_id INT PRIMARY KEY,
     developer_name TEXT NOT NULL UNIQUE
 );
 
 -- Create genre
 CREATE TABLE genre (
-    genre_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    genre_id INT PRIMARY KEY,
     genre_name TEXT NOT NULL UNIQUE
 );
 

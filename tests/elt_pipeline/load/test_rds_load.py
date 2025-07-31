@@ -37,9 +37,11 @@ def fake_data():
         "publishers": ["Publisher Company"],
     }])
 
-    publisher_df = pd.DataFrame([{"publisher_name": "Publisher Company"}])
-    developer_df = pd.DataFrame([{"developer_name": "Developer Company"}])
-    genre_df = pd.DataFrame([{"genre_name": "Indie"}])
+    publisher_df = pd.DataFrame(
+        [{"publisher_id": 1, "publisher_name": "Publisher Company"}])
+    developer_df = pd.DataFrame(
+        [{"developer_id": 1, "developer_name": "Developer Company"}])
+    genre_df = pd.DataFrame([{"genre_id":      1, "genre_name":      "Indie"}])
 
     return games_df, publisher_df, developer_df, genre_df
 
@@ -144,7 +146,7 @@ def test_genre_assign_data_is_correct(monkeypatch, temp_engine):
 
     with temp_engine.connect() as conn:
         result = conn.execute(
-            text("SELECT game_id, genre_id FROM genre_assignment")).fetchone()
+            text("SELECT genre_id, game_id FROM genre_assignment")).fetchone()
         assert result != None
 
 
@@ -170,5 +172,5 @@ def test_publisher_assign_is_correct(monkeypatch, temp_engine):
 
     with temp_engine.connect() as conn:
         result = conn.execute(
-            text("SELECT game_id, publisher_id FROM publisher_assignment")).fetchone()
+            text("SELECT publisher_id, game_id FROM publisher_assignment")).fetchone()
         assert result != None
