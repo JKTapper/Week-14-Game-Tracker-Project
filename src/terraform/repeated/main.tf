@@ -95,7 +95,7 @@ resource "aws_cloudwatch_event_target" "lambda_target" {
 resource "aws_lambda_function" "docker_lambda_lt" {
   function_name = "c18-game-tracker-lt-lambda"
   package_type  = "Image"
-  image_uri     = var.lambda_image_uri # Assumes same image
+  image_uri     = var.lambda_image_uri
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
   timeout       = 60
   memory_size   = 512
