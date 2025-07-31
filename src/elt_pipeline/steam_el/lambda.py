@@ -46,6 +46,3 @@ def handler(event, context):
         return {'statusCode': 200}
     except (TypeError, ValueError, IndexError) as e:
         return {'statusCode': 500, 'error': str(e)}
-
-
-run_pipeline()
