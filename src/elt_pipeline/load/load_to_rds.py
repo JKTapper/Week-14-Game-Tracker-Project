@@ -42,11 +42,11 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
 
     sql = text("""
         INSERT INTO game (
-          game_name, app_id, store_id, release_date,
+          game_id, game_name, app_id, store_id, release_date,
           game_description, recent_reviews_summary,
           os_requirements, storage_requirements, price
         ) VALUES (
-          :game_name, :app_id, :store_id, :release_date,
+          :game_id, :game_name, :app_id, :store_id, :release_date,
           :game_description, :recent_reviews_summary,
           :os_requirements, :storage_requirements, :price
         )
@@ -55,6 +55,7 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
 
     for _, row in games_df.iterrows():
         conn.execute(sql, {
+            "game_id": row["game_id"],
             "game_name": row["game_name"],
             "app_id": row["app_id"],
             "store_id": 1,
@@ -81,15 +82,20 @@ def upload_assignments(conn, df: pd.DataFrame, table: str, left_foreign_key: str
             sql, {"l": int(row[left_foreign_key]), "r": int(row[right_foreign_key])})
 
 
+def get_existing_game_ids(conn) -> set[int]:
+    """Gets set of all existing game ids"""
+    result = conn.execute(text("SELECT game_id FROM game"))
+    return set(row[0] for row in result.fetchall())
+
+
 def load_data_into_database(games_df: pd.DataFrame,
                             publisher_df: pd.DataFrame,
                             developer_df: pd.DataFrame,
-                            genre_df: pd.DataFrame) -> None:
+                            genre_df: pd.DataFrame,
+                            genre_assignment_df,
+                            developer_assignment_df,
+                            publisher_assignment_df) -> None:
     """Loads all data into our database"""
-    data = transform_s3_steam_data()
-    genre_assignment_df = data["genre_assignment"]
-    developer_assignment_df = data["developer_assignment"]
-    publisher_assignment_df = data["publisher_assignment"]
 
     games_df["app_id"] = games_df["app_id"].astype(int)
     games_df["price"] = games_df["price"].astype(int)
@@ -104,6 +110,18 @@ def load_data_into_database(games_df: pd.DataFrame,
         upload_table(conn, genre_df, "genre", "genre_name", "genre_id")
 
         upload_games(conn, games_df)
+
+        existing_game_ids = get_existing_game_ids(conn)
+
+        genre_assignment_df = genre_assignment_df[
+            genre_assignment_df["game_id"].isin(existing_game_ids)
+        ]
+        developer_assignment_df = developer_assignment_df[
+            developer_assignment_df["game_id"].isin(existing_game_ids)
+        ]
+        publisher_assignment_df = publisher_assignment_df[
+            publisher_assignment_df["game_id"].isin(existing_game_ids)
+        ]
 
         upload_assignments(conn, genre_assignment_df,
                            "genre_assignment",     "genre_id",     "game_id")
@@ -120,8 +138,11 @@ def main():
     publisher_df = data["publisher"]
     developer_df = data["developer"]
     genre_df = data["genre"]
-
-    load_data_into_database(games_df, publisher_df, developer_df, genre_df)
+    genre_assignment_df = data["genre_assignment"]
+    developer_assignment_df = data["developer_assignment"]
+    publisher_assignment_df = data["publisher_assignment"]
+    load_data_into_database(games_df, publisher_df, developer_df, genre_df,
+                            genre_assignment_df, developer_assignment_df, publisher_assignment_df)
 
 
 if __name__ == "__main__":

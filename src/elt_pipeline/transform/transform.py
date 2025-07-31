@@ -201,7 +201,11 @@ def get_game_id(count: int) -> list[int]:
             SELECT nextval(pg_get_serial_sequence('game','game_id'))
             FROM generate_series(1, %s)
         """, (count,))
-        new_ids = [row[0] for row in cur.fetchall()]
+
+        rows = cur.fetchall(
+        )
+
+        new_ids = [row["nextval"] for row in rows]
     finally:
         conn.close()
 
@@ -224,6 +228,8 @@ def transform_s3_steam_data():
 
     new_ids = get_game_id(len(new_data))
     new_data["game_id"] = new_ids
+
+    game_data["game_id"] = new_ids
 
     genres = get_reference_data(
         new_data, read_db_table_into_df('genre'), 'genre')
