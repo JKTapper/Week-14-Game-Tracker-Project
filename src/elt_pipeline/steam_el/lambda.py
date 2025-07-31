@@ -3,7 +3,7 @@
 import logging
 from extract import (STEAM_URL, get_existing_games, get_html,
                      parse_games_bs, iterate_through_scraped_games)
-from src.elt_pipeline.steam_el.load import S3_PATH, get_session, add_time_partitioning, upload_to_s3
+from load import S3_PATH, get_session, add_time_partitioning, upload_to_s3
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
