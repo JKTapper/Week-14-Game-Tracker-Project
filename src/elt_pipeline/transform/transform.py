@@ -191,6 +191,23 @@ GAME_DATA_TRANSLATION = [
 ]
 
 
+def get_game_id(count: int) -> list[int]:
+    """Gets current game ids from database to help merge assignment tables"""
+    conn = get_db_connection()
+
+    try:
+        cur = conn.cursor(cursor_factory=None)
+        cur.execute(f"""
+            SELECT nextval(pg_get_serial_sequence('game','game_id'))
+            FROM generate_series(1, %s)
+        """, (count,))
+        new_ids = [row[0] for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+    return new_ids
+
+
 def transform_s3_steam_data():
     """
     Reads data in the S3, discards any data already in the RDS and
@@ -205,11 +222,8 @@ def transform_s3_steam_data():
 
     game_data = process_data(new_data, GAME_DATA_TRANSLATION)
 
-    new_data["game_id"] = list(range(
-        existing_data["game_id"].max() + 1 if not existing_data.empty else 1,
-        existing_data["game_id"].max(
-        ) + 1 + len(new_data) if not existing_data.empty else 1 + len(new_data)
-    ))
+    new_ids = get_game_id(len(new_data))
+    new_data["game_id"] = new_ids
 
     genres = get_reference_data(
         new_data, read_db_table_into_df('genre'), 'genre')
