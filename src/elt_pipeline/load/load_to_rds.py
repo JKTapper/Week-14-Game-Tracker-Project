@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine, text, Engine
 
-from src.elt_pipeline.transform.transform import transform_s3_steam_data
+from src.elt_pipeline.steam_tl.transform import transform_s3_steam_data
 
 load_dotenv()
 
@@ -146,4 +146,8 @@ def main():
 
 
 if __name__ == "__main__":
+    main()
+
+
+def handler(event, context):
     main()

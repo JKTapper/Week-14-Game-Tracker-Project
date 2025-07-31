@@ -1,8 +1,8 @@
 """Test suite for the functions in the transformation code"""
 import pandas as pd
 import pytest
-from src.elt_pipeline.transform.transform import get_assignment_df, process_data
-from src.elt_pipeline.transform.transform import extract_memory_requirements, get_reference_data
+from src.elt_pipeline.steam_tl.transform import get_assignment_df, process_data
+from src.elt_pipeline.steam_tl.transform import extract_memory_requirements, get_reference_data
 
 get_assignment_df_test_data = [(
     pd.DataFrame({
