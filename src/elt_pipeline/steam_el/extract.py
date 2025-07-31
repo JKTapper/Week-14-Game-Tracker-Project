@@ -17,7 +17,7 @@ def get_existing_games(path: str, session) -> list[str]:
     Returns a DataFrame containing existing games' app IDs'''
     try:
         df = wr.s3.read_parquet(path, dataset=True, columns=[
-                                'app_id'], boto3_session=session)
+            'app_id'], boto3_session=session)
         return df['app_id'].astype(str).tolist()
     except Exception as e:
         logging.error(f"No existing data found in S3: {e}")
@@ -96,6 +96,9 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
         app_id = item['app_id']
         if app_id:
             details = get_steam_game_details(app_id)
+            if 'requirements' not in details or not isinstance(details['requirements'], dict) or 'minimum' not in details['requirements']:
+                details['requirements'] = {'minimum': None}
+            details['price'] = int(details['price']) if details['price'] else 0
             # Merge original data with extra info
             full_data = item | details
             games_full_data.append(full_data)

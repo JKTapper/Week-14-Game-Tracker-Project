@@ -134,7 +134,8 @@ def test_iterate_through_scraped_games_success(mock_get_details):
     api_details = {
         'publishers': ['Fake Publisher'],
         'description': 'A great game!',
-        'is_free': False
+        'is_free': False,
+        'price': None
     }
 
     mock_get_details.return_value = api_details
