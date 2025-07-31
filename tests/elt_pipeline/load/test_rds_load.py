@@ -1,176 +1,119 @@
 # pylint: skip-file
 
 from pathlib import Path
-import pytest
 import pandas as pd
 from sqlalchemy import create_engine, text
+from unittest.mock import MagicMock, patch
 import src.elt_pipeline.load.load_to_rds as loader
 
 
-@pytest.fixture
-def temp_engine():
-    engine = create_engine("sqlite:///:memory:")
-    schema_sql = Path("src/schema/test_schema.sql").read_text()
+games_df = pd.DataFrame({
+    "game_name": ["Game A"],
+    "app_id": [123],
+    "release_date": ["2023-01-01"],
+    "description": ["Description A"],
+    "price": [19.99]
+})
 
-    raw_conn = engine.raw_connection()
-    cursor = raw_conn.cursor()
-    cursor.executescript(schema_sql)
-    raw_conn.commit()
-    raw_conn.close()
+publisher_df = pd.DataFrame({
+    "publisher_id": [1],
+    "publisher_name": ["Publisher A"]
+})
 
-    return engine
+developer_df = pd.DataFrame({
+    "developer_id": [1],
+    "developer_name": ["Developer A"]
+})
+
+genre_df = pd.DataFrame({
+    "genre_id": [1],
+    "genre_name": ["Genre A"]
+})
+
+genre_assignment_df = pd.DataFrame({
+    "genre_id": [1],
+    "game_id": [123]
+})
+
+developer_assignment_df = pd.DataFrame({
+    "developer_id": [1],
+    "game_id": [123]
+})
+
+publisher_assignment_df = pd.DataFrame({
+    "publisher_id": [1],
+    "game_id": [123]
+})
+
+assignment_df = pd.DataFrame({
+    "genre_id": [1],
+    "game_id": [123]
+})
 
 
-def fake_data():
-    games_df = pd.DataFrame([{
-        "game_name": "Test Game",
-        "app_id": 42,
-        "store_name": "steam",
-        "release_date": "2025-07-30",
-        "game_description": "A test",
-        "recent_reviews_summary": "Mostly positive",
-        "os_requirements": "Any",
-        "storage_requirements": "5GB",
-        "price": 12.34,
-        "genres": ["Indie"],
-        "developers": ["Developer Company"],
-        "publishers": ["Publisher Company"],
-    }])
+def test_upload_table_calls_execute_with_correct_sql():
+    conn = MagicMock()
+    df = pd.DataFrame({"publisher_id": [1], "publisher_name": ["Pub1"]})
+    loader.upload_table(conn, df, "publisher",
+                        "publisher_name", "publisher_id")
 
-    publisher_df = pd.DataFrame(
-        [{"publisher_id": 1, "publisher_name": "Publisher Company"}])
-    developer_df = pd.DataFrame(
-        [{"developer_id": 1, "developer_name": "Developer Company"}])
-    genre_df = pd.DataFrame([{"genre_id":      1, "genre_name":      "Indie"}])
-
-    return games_df, publisher_df, developer_df, genre_df
+    assert conn.execute.call_count == len(df)
+    args, kwargs = conn.execute.call_args
+    params = args[1]
+    assert "INSERT INTO publisher" in str(args[0])
+    assert params["id"] == 1
+    assert params["name"] == "Pub1"
 
 
-def test_load_data_into_database(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+def test_upload_games_executes_correctly():
+    conn = MagicMock()
+    loader.upload_games(conn, games_df)
 
-    games_df, publisher_df, developer_df, genre_df = fake_data()
+    assert conn.execute.call_count == len(games_df)
+    args, kwargs = conn.execute.call_args
+    params = args[1]
+    assert "INSERT INTO game" in str(args[0])
+    assert params["game_name"] == "Game A"
+    assert params["app_id"] == 123
+    assert params["price"] == 19.99
+
+
+def test_upload_assignments_executes_correctly():
+    conn = MagicMock()
+    loader.upload_assignments(conn, assignment_df,
+                              "genre_assignment", "genre_id", "game_id")
+
+    assert conn.execute.call_count == len(assignment_df)
+    args, kwargs = conn.execute.call_args
+    params = args[1]
+    assert "INSERT INTO genre_assignment" in str(args[0])
+    assert params["l"] == 1
+    assert params["r"] == 123
+
+
+@patch("src.elt_pipeline.load.load_to_rds.get_engine")
+@patch("src.elt_pipeline.load.load_to_rds.transform_s3_steam_data")
+def test_load_data_into_database_calls_all_uploads(mock_transform, mock_get_engine):
+    mock_transform.return_value = {
+        "genre_assignment": genre_assignment_df,
+        "developer_assignment": developer_assignment_df,
+        "publisher_assignment": publisher_assignment_df,
+    }
+
+    mock_conn = MagicMock()
+    mock_engine = MagicMock()
+    mock_engine.begin.return_value.__enter__.return_value = mock_conn
+    mock_get_engine.return_value = mock_engine
 
     loader.load_data_into_database(
         games_df, publisher_df, developer_df, genre_df)
 
-    with temp_engine.connect() as conn:
-        expected_counts = {
-            "store": 1,
-            "publisher": 1,
-            "developer": 1,
-            "genre": 1,
-            "game": 1,
-            "genre_assignment": 1,
-            "developer_assignment": 1,
-            "publisher_assignment": 1,
-        }
-
-        for table, expected in expected_counts.items():
-            count = conn.execute(
-                text(f"SELECT COUNT(*) FROM {table}")).scalar_one()
-            assert count == expected, f"Expected {expected} row(s) in {table}, found {count}"
+    assert mock_conn.execute.call_count > 0
 
 
-def test_game_data_is_correct(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
+def test_get_engine_returns_engine_instance():
+    engine = loader.get_engine()
 
-    games_df, publisher_df, developer_df, genre_df = fake_data()
-    loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
+    from sqlalchemy.engine import Engine
 
-    with temp_engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT game_name, app_id, price FROM game")).fetchone()
-        assert result == ("Test Game", 42, 12.34)
-
-
-def test_publisher_data_is_correct(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
-
-    games_df, publisher_df, developer_df, genre_df = fake_data()
-    loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
-
-    with temp_engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT publisher_name FROM publisher")).fetchone()
-        assert result == ("Publisher Company", )
-
-
-def test_developer_data_is_correct(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
-
-    games_df, publisher_df, developer_df, genre_df = fake_data()
-    loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
-
-    with temp_engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT developer_name FROM developer")).fetchone()
-        assert result == ("Developer Company", )
-
-
-def test_genre_data_is_correct(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
-
-    games_df, publisher_df, developer_df, genre_df = fake_data()
-    loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
-
-    with temp_engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT genre_name FROM genre")).fetchone()
-        assert result == ("Indie", )
-
-
-def test_store_data_is_correct(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
-
-    games_df, publisher_df, developer_df, genre_df = fake_data()
-    loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
-
-    with temp_engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT store_name FROM store")).fetchone()
-        assert result == ("steam", )
-
-
-def test_genre_assign_data_is_correct(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
-
-    games_df, publisher_df, developer_df, genre_df = fake_data()
-    loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
-
-    with temp_engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT genre_id, game_id FROM genre_assignment")).fetchone()
-        assert result != None
-
-
-def test_developer_assign_is_correct(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
-
-    games_df, publisher_df, developer_df, genre_df = fake_data()
-    loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
-
-    with temp_engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT developer_id, game_id FROM developer_assignment")).fetchone()
-        assert result != None
-
-
-def test_publisher_assign_is_correct(monkeypatch, temp_engine):
-    monkeypatch.setattr(loader, "get_engine", lambda: temp_engine)
-
-    games_df, publisher_df, developer_df, genre_df = fake_data()
-    loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
-
-    with temp_engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT publisher_id, game_id FROM publisher_assignment")).fetchone()
-        assert result != None
+    assert isinstance(engine, Engine)

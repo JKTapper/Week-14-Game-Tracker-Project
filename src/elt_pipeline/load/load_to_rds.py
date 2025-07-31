@@ -27,7 +27,7 @@ def upload_table(conn, df: pd.DataFrame, table: str, col: str, pk: str) -> None:
     sql = text(f"""
         INSERT INTO {table} ({pk}, {col})
         VALUES (:id, :name)
-        ON CONFLICT ({col}) DO NOTHING
+        ON CONFLICT ({pk}) DO NOTHING
     """)
 
     for _, row in df.iterrows():
@@ -60,7 +60,7 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
             "store_id": 1,
             # THishardcodes for steam currently
             "release_date": row["release_date"],
-            "game_description": row["game_description"],
+            "game_description": row["description"],
             "recent_reviews_summary": None,
             "os_requirements": None,
             "storage_requirements": None,
@@ -94,6 +94,8 @@ def load_data_into_database(games_df: pd.DataFrame,
     games_df["app_id"] = games_df["app_id"].astype(int)
     games_df["price"] = games_df["price"].astype(float)
 
+    print(games_df.columns)
+
     engine = get_engine()
 
     with engine.begin() as conn:
@@ -120,6 +122,7 @@ def main():
     publisher_df = data["publisher"]
     developer_df = data["developer"]
     genre_df = data["genre"]
+
     load_data_into_database(games_df, publisher_df, developer_df, genre_df)
 
 

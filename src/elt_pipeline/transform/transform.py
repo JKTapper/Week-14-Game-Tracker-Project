@@ -163,6 +163,8 @@ def interpret_release_date(release_date: str) -> date:
     """
     Interprets the release date as a date object
     """
+    if isinstance(release_date, (datetime, pd.Timestamp)):
+        return release_date.date()
     try:
         return datetime.strptime(release_date, '%d %b, %Y').date()
     except ValueError:
@@ -174,12 +176,12 @@ STEAM_STORE_ID = 1
 GAME_DATA_TRANSLATION = [
     {'old_name': 'release', 'new_name': 'release_date',
         'translation': interpret_release_date},
-    {'name': 'game_description',
+    {'name': 'description',
         'translation': lambda x: x},
     {'old_name': 'requirements', 'new_name': 'storage_requirements',
         'translation': extract_memory_requirements},
     {'name': 'price',
-        'translation': lambda x: float(100*x) if pd.notna(x) else 0.0},
+        'translation': lambda x: int(100*x) if pd.notna(x) else 0},
     {'old_name': 'title', 'new_name': 'game_name',
         'translation': lambda x: x},
     {'name': 'app_id',
@@ -195,12 +197,22 @@ def transform_s3_steam_data():
     transforms it into the correct format to be uploaded to the RDS
     """
     raw_df = wr.s3.read_parquet(S3_PATH)
-
+    raw_df["price"] = raw_df["price"].astype(float)
     existing_data = read_db_table_into_df('game')
+    existing_data['game_id'] = pd.to_numeric(
+        existing_data['game_id'], errors='coerce').fillna(0).astype(int)
 
     new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])]
 
     game_data = process_data(new_data, GAME_DATA_TRANSLATION)
+    game_data["game_id"] = list(range(
+        existing_data["game_id"].max() + 1 if not existing_data.empty else 1,
+        existing_data["game_id"].max(
+        ) + 1 + len(game_data) if not existing_data.empty else 1 + len(game_data)
+    ))
+
+    new_data = new_data.copy()
+    new_data["game_id"] = game_data["game_id"]
 
     genres = get_reference_data(
         new_data, read_db_table_into_df('genre'), 'genre')
@@ -208,6 +220,12 @@ def transform_s3_steam_data():
         new_data, read_db_table_into_df('publisher'), 'publisher')
     developers = get_reference_data(
         new_data, read_db_table_into_df('developer'), 'developer')
+
+    game_data = game_data.merge(
+        new_data[['app_id', 'genres', 'developers', 'publishers', 'game_id']],
+        on=['app_id', 'game_id'],
+        how='left'
+    )
 
     return {
         'genre': genres['new'],
