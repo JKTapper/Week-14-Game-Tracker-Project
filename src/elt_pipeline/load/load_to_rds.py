@@ -58,7 +58,7 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
             "game_name": row["game_name"],
             "app_id": row["app_id"],
             "store_id": 1,
-            # THishardcodes for steam currently
+            # This hardcodes for steam currently
             "release_date": row["release_date"],
             "game_description": row["description"],
             "recent_reviews_summary": None,
