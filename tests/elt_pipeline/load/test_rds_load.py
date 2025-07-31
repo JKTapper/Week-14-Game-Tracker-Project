@@ -8,6 +8,7 @@ import src.elt_pipeline.load.load_to_rds as loader
 
 
 games_df = pd.DataFrame({
+    "game_id": [1],
     "game_name": ["Game A"],
     "app_id": [123],
     "release_date": ["2023-01-01"],
@@ -106,7 +107,7 @@ def test_load_data_into_database_calls_all_uploads(mock_transform, mock_get_engi
     mock_get_engine.return_value = mock_engine
 
     loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df)
+        games_df, publisher_df, developer_df, genre_df, genre_assignment_df, developer_assignment_df, publisher_assignment_df)
 
     assert mock_conn.execute.call_count > 0
 
