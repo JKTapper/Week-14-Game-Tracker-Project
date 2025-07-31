@@ -7,7 +7,7 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
 import awswrangler as wr
-from load import get_session, S3_PATH
+from src.elt_pipeline.steam_el.load import get_session, S3_PATH
 
 STEAM_URL = "https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english"
 
