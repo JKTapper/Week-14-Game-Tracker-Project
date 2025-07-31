@@ -96,7 +96,7 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
         app_id = item['app_id']
         if app_id:
             details = get_steam_game_details(app_id)
-            if not isinstance(details['requirements'], dict) or 'minimum' not in details['requirements']:
+            if 'requirements' not in details or not isinstance(details['requirements'], dict) or 'minimum' not in details['requirements']:
                 details['requirements'] = {'minimum': None}
             # Merge original data with extra info
             full_data = item | details
