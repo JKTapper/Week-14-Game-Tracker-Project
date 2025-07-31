@@ -56,8 +56,6 @@ CREATE TABLE game (
     store_id INT NOT NULL,
     release_date DATE,
     game_description TEXT,
-    recent_reviews_summary TEXT,
-    os_requirements TEXT,
     storage_requirements TEXT,
     price INT,
     currency TEXT,
