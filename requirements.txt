@@ -20,3 +20,5 @@ requests
 boto3
 awswrangler
 requests_mock
+flask
+sqlalchemy
