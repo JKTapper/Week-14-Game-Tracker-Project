@@ -187,7 +187,7 @@ GAME_DATA_TRANSLATION = [
     {'name': 'store_id',
         'value': STEAM_STORE_ID},
     {'name': 'currency',
-        'translation': lambda x: x or 'GBP'},
+        'translation': lambda x: 'GBP' if pd.isna(x) else x},
 ]
 
 
@@ -252,9 +252,9 @@ def transform_s3_steam_data():
 load_dotenv()
 
 DB_URL = (
-    f"postgresql+psycopg2://{os.getenv('DB_USERNAME')}"
-    f":{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}"
-    f":{os.getenv('DB_PORT', 5432)}/{os.getenv('DB_NAME')}"
+    f"postgresql+psycopg2://{os.getenv('DATABASE_USERNAME')}"
+    f":{os.getenv('DATABASE_PASSWORD')}@{os.getenv('DATABASE_IP')}"
+    f":{os.getenv('DATABASE_PORT', 5432)}/{os.getenv('DATABASE_NAME')}"
 )
 
 
@@ -286,12 +286,10 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
     sql = text("""
         INSERT INTO game (
           game_id, game_name, app_id, store_id, release_date,
-          game_description, recent_reviews_summary,
-          os_requirements, storage_requirements, price
+          game_description, storage_requirements, price
         ) VALUES (
           :game_id, :game_name, :app_id, :store_id, :release_date,
-          :game_description, :recent_reviews_summary,
-          :os_requirements, :storage_requirements, :price
+          :game_description, :storage_requirements, :price
         )
         ON CONFLICT (app_id) DO NOTHING
     """)
