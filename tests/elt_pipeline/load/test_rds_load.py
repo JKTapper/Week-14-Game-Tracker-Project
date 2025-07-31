@@ -13,7 +13,8 @@ games_df = pd.DataFrame({
     "app_id": [123],
     "release_date": ["2023-01-01"],
     "description": ["Description A"],
-    "price": [19.99]
+    "price": [1999],
+    "currency": "GDP"
 })
 
 publisher_df = pd.DataFrame({
@@ -76,7 +77,7 @@ def test_upload_games_executes_correctly():
     assert "INSERT INTO game" in str(args[0])
     assert params["game_name"] == "Game A"
     assert params["app_id"] == 123
-    assert params["price"] == 19.99
+    assert params["price"] == 1999
 
 
 def test_upload_assignments_executes_correctly():

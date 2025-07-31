@@ -182,6 +182,8 @@ GAME_DATA_TRANSLATION = [
         'translation': extract_memory_requirements},
     {'name': 'price',
         'translation': lambda x: float(x) if pd.notna(x) else 0},
+    {'name': 'currency',
+        'translation': lambda x: x if pd.notna(x) else "GBP"},
     {'old_name': 'title', 'new_name': 'game_name',
         'translation': lambda x: x},
     {'name': 'app_id',

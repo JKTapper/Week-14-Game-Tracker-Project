@@ -44,11 +44,11 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
         INSERT INTO game (
           game_id, game_name, app_id, store_id, release_date,
           game_description, recent_reviews_summary,
-          os_requirements, storage_requirements, price
+          os_requirements, storage_requirements, price, currency
         ) VALUES (
           :game_id, :game_name, :app_id, :store_id, :release_date,
           :game_description, :recent_reviews_summary,
-          :os_requirements, :storage_requirements, :price
+          :os_requirements, :storage_requirements, :price, :currency
         )
         ON CONFLICT (app_id) DO NOTHING
     """)
@@ -66,6 +66,7 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
             "os_requirements": None,
             "storage_requirements": None,
             "price": row["price"],
+            "currency": row["currency"]
         })
 
 

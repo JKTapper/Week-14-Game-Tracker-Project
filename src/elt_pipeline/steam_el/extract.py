@@ -87,6 +87,7 @@ def get_steam_game_details(app_id: int) -> dict[str]:
                     'requirements': game_data.get('pc_requirements'),
                     'is_free': game_data.get('is_free', False),
                     'price': game_data.get('price_overview', {}).get('final'),
+                    'currency': game_data.get('price_overview', {}).get('currency'),
                     'genres': [genre['description'] for genre in game_data.get('genres', [])],
                     'image': game_data.get('header_image')
                 }

@@ -58,6 +58,7 @@ CREATE TABLE game (
     game_description TEXT,
     storage_requirements TEXT,
     price INT,
+    currency TEXT,
     FOREIGN KEY (store_id) REFERENCES store (store_id)
 );
 
