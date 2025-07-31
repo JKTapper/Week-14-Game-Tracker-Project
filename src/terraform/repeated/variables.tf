@@ -20,7 +20,7 @@ variable "DB_HOST" {
   type        = string
 }
 variable "DB_PORT" {
-  description = "Port for MS SQLServer"
+  description = "Port for Postgres"
   type        = string
 }
 variable "DB_USER" {

@@ -130,7 +130,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_all_in" {
 }
 
 # Cloudwatch log group
-resource "aws_cloudwatch_log_group" "botanists-logs" {
+resource "aws_cloudwatch_log_group" "game-tracker-logs" {
   name              = "/ecs/c18-game-tracker-dashboard-task"
   retention_in_days = 7
 }
