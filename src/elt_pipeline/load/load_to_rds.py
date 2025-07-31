@@ -94,8 +94,6 @@ def load_data_into_database(games_df: pd.DataFrame,
     games_df["app_id"] = games_df["app_id"].astype(int)
     games_df["price"] = games_df["price"].astype(float)
 
-    print(games_df.columns)
-
     engine = get_engine()
 
     with engine.begin() as conn:
