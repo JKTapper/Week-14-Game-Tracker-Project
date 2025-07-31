@@ -384,7 +384,3 @@ def main():
     publisher_assignment_df = data["publisher_assignment"]
     load_data_into_database(games_df, publisher_df, developer_df, genre_df,
                             genre_assignment_df, developer_assignment_df, publisher_assignment_df)
-
-
-if __name__ == "__main__":
-    main()
