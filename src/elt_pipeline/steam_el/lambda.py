@@ -3,7 +3,7 @@
 import logging
 from extract import (STEAM_URL, get_existing_games, get_html,
                      parse_games_bs, iterate_through_scraped_games)
-from load import S3_PATH, get_session, add_time_partitioning, upload_to_s3
+from src.elt_pipeline.steam_el.load import S3_PATH, get_session, add_time_partitioning, upload_to_s3
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -20,9 +20,12 @@ def run_pipeline():
     steam_html = get_html(STEAM_URL)
     # can limit number that are used
     scraped_games = parse_games_bs(steam_html)
+    logging.info(f'Scraped {len(scraped_games)} games from steam')
     new_games = [
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
     logging.info(f'Scraped {len(new_games)} new games')
+    if not new_games:
+        return None
 
     # Add data from API
     full_game_data = iterate_through_scraped_games(new_games)

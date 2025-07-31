@@ -149,7 +149,7 @@ GAME_DATA_TRANSLATION = [
     {'old_name': 'requirements', 'new_name': 'storage_requirements',
         'translation': extract_memory_requirements},
     {'name': 'price',
-        'translation': lambda x: int(100*x)},
+        'translation': lambda x: x},
     {'old_name': 'title', 'new_name': 'game_name',
         'translation': lambda x: x},
     {'name': 'app_id',

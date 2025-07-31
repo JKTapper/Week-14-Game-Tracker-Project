@@ -22,7 +22,7 @@ def add_time_partitioning(data: list[dict[str]]) -> pd.DataFrame:
     df['release'] = pd.to_datetime(df['release'], errors='coerce')
 
     # Fill invalid or missing dates with a placeholder
-    unreleased_date = datetime(9999, 12, 31)
+    unreleased_date = datetime(1900, 12, 31)
     df['release'] = df['release'].fillna(unreleased_date)
 
     df['year'] = df['release'].dt.year
