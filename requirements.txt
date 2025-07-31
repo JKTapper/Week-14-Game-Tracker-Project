@@ -18,3 +18,5 @@ psycopg2-binary
 bs4
 requests
 boto3
+awswrangler
+requests_mock
