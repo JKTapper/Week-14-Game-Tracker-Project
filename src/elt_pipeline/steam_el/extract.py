@@ -7,7 +7,7 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
 import awswrangler as wr
-from src.elt_pipeline.steam_el.load import get_session, S3_PATH
+from load import get_session, S3_PATH
 
 STEAM_URL = "https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english"
 
@@ -17,7 +17,7 @@ def get_existing_games(path: str, session) -> list[str]:
     Returns a DataFrame containing existing games' app IDs'''
     try:
         df = wr.s3.read_parquet(path, dataset=True, columns=[
-                                'app_id'], boto3_session=session)
+            'app_id'], boto3_session=session)
         return df['app_id'].astype(str).tolist()
     except Exception as e:
         logging.error(f"No existing data found in S3: {e}")
@@ -96,6 +96,8 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
         app_id = item['app_id']
         if app_id:
             details = get_steam_game_details(app_id)
+            if not isinstance(details['requirements'], dict) or 'minimum' not in details['requirements']:
+                details['requirements'] = {'minimum': None}
             # Merge original data with extra info
             full_data = item | details
             games_full_data.append(full_data)
