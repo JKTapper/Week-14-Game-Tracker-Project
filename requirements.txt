@@ -22,7 +22,6 @@ dotenv==0.9.9
 idna==3.10
 jmespath==1.0.1
 pandas==2.3.1
-psycopg2==2.9.10
 psycopg2-binary==2.9.10
 pyarrow==20.0.0
 python-dateutil==2.9.0.post0
@@ -37,12 +36,4 @@ SQLAlchemy==2.0.41
 typing_extensions==4.14.1
 tzdata==2025.2
 urllib3==2.5.0
-awswrangler
-pandas
-dotenv
-psycopg2-binary
-bs4
-requests
-boto3
-awswrangler
 requests_mock
