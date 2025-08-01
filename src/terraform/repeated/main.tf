@@ -91,9 +91,9 @@ resource "aws_cloudwatch_event_target" "lambda_target" {
 }
 
 
-# LT lambda
-resource "aws_lambda_function" "docker_lambda_lt" {
-  function_name = "c18-game-tracker-lt-lambda"
+# tl lambda
+resource "aws_lambda_function" "docker_lambda_tl" {
+  function_name = "c18-game-tracker-tl-lambda"
   package_type  = "Image"
   image_uri     = var.lambda_image_uri
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
@@ -114,23 +114,23 @@ resource "aws_lambda_function" "docker_lambda_lt" {
 }
 
 
-resource "aws_cloudwatch_event_rule" "lt_schedule" {
-  name                = "c18-game-tracker-lambda-lt-schedule"
+resource "aws_cloudwatch_event_rule" "tl_schedule" {
+  name                = "c18-game-tracker-lambda-tl-schedule"
   schedule_expression = "cron(30 * * * ? *)"
 }
 
-resource "aws_lambda_permission" "lt_permission" {
-  statement_id  = "AllowExecutionFromEventBridgeLT"
+resource "aws_lambda_permission" "tl_permission" {
+  statement_id  = "AllowExecutionFromEventBridgetl"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.docker_lambda_lt.function_name
+  function_name = aws_lambda_function.docker_lambda_tl.function_name
   principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.lt_schedule.arn
+  source_arn    = aws_cloudwatch_event_rule.tl_schedule.arn
 }
 
-resource "aws_cloudwatch_event_target" "lt_target" {
-  rule      = aws_cloudwatch_event_rule.lt_schedule.name
-  target_id = "lambda-lt"
-  arn       = aws_lambda_function.docker_lambda_lt.arn
+resource "aws_cloudwatch_event_target" "tl_target" {
+  rule      = aws_cloudwatch_event_rule.tl_schedule.name
+  target_id = "lambda-tl"
+  arn       = aws_lambda_function.docker_lambda_tl.arn
 }
 
 
