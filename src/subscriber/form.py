@@ -1,3 +1,6 @@
+"""
+Flask app to run form for user subscriptions
+"""
 import os
 import pandas as pd
 from dotenv import load_dotenv
@@ -23,6 +26,9 @@ def connect_to_rds():
 
 
 def insert_sub_genre_assignment(conn, subscriber_id, genres_sub):
+    """
+    Insert statements for genre_assignment table 
+    """
     for genre in genres_sub:
         genre_id = conn.execute(text("select genre_id from genre where genre_name = :genre"), {"genre":genre}).fetchone()[0]
         conn.execute(text("""insert into subscriber_genre_assignment (genre_id, subscriber_id)
@@ -31,9 +37,11 @@ def insert_sub_genre_assignment(conn, subscriber_id, genres_sub):
 
 @app.route("/", methods=["GET", "POST"])
 def form():
-
+    """
+    Route/render html form 
+    """
     connection = connect_to_rds()
-    #Get list of current genres in RDS
+    
     with connection.begin() as conn:
         genres = pd.read_sql("select * from genre;", conn)["genre_name"]
     
@@ -49,8 +57,11 @@ def form():
                 text("""INSERT INTO subscriber (subscriber_email, email_notifications, summary) 
                     VALUES (:email, :email_notifications, :summary) returning subscriber_id"""),
                 {"email": email, "email_notifications":email_notifications, "summary":summary}).fetchone()[0]
-                insert_sub_genre_assignment(conn, sub_id, genres_sub)
-                return f"Thank you! You selected {genres_sub}. We'll contact you at {email}."
+                
+                if genres_sub is not None:
+                    insert_sub_genre_assignment(conn, sub_id, genres_sub)
+                
+                return f"Thank you! We'll contact you at {email}."
                 
         except:  
             return ("Email already registered use another one")
