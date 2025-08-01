@@ -1,3 +1,4 @@
+'''Resets database'''
 import os
 from dotenv import load_dotenv
 import psycopg2
@@ -35,5 +36,5 @@ def run_schema(conn):
 
 
 if __name__ == "__main__":
-    conn = connect_to_rds()
-    run_schema(conn)
+    main_conn = connect_to_rds()
+    run_schema(main_conn)
