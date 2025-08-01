@@ -43,17 +43,17 @@ def form():
         email_notifications = request.form.get("notifications", False)
         summary = request.form.get("summary", False)
         
-        try:
-            with connection.begin() as conn:
-                sub_id = conn.execute(
-                text("""INSERT INTO subscriber (subscriber_email, email_notifications, summary) 
-                    VALUES (:email, :email_notifications, :summary) returning subscriber_id"""),
-                {"email": email, "email_notifications":email_notifications, "summary":summary}).fetchone()[0]
-                insert_sub_genre_assignment(conn, sub_id, genres_sub)
-                return f"Thank you! You selected {genres_sub}. We'll contact you at {email}."
+        # try:
+        with connection.begin() as conn:
+            sub_id = conn.execute(
+            text("""INSERT INTO subscriber (subscriber_email, email_notifications, summary) 
+                VALUES (:email, :email_notifications, :summary) returning subscriber_id"""),
+            {"email": email, "email_notifications":email_notifications, "summary":summary}).fetchone()[0]
+            insert_sub_genre_assignment(conn, sub_id, genres_sub)
+            return f"Thank you! You selected {genres_sub}. We'll contact you at {email}."
                 
-        except:
-            return ("Email already registered use another one")
+        
+            # return ("Email already registered use another one")
 
 
     return render_template("form.html", genres=genres)
