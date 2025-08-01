@@ -59,13 +59,12 @@ def test_upload_table_calls_execute_with_correct_sql():
     conn = MagicMock()
     df = pd.DataFrame({"publisher_id": [1], "publisher_name": ["Pub1"]})
     loader.upload_table(conn, df, "publisher",
-                        "publisher_name", "publisher_id")
+                        "publisher_name")
 
     assert conn.execute.call_count == len(df)
     args, kwargs = conn.execute.call_args
     params = args[1]
     assert "INSERT INTO publisher" in str(args[0])
-    assert params["id"] == 1
     assert params["name"] == "Pub1"
 
 
@@ -110,7 +109,7 @@ def test_load_data_into_database_calls_all_uploads(mock_transform, mock_get_engi
     mock_get_engine.return_value = mock_engine
 
     loader.load_data_into_database(
-        games_df, publisher_df, developer_df, genre_df, genre_assignment_df, developer_assignment_df, publisher_assignment_df)
+        mock_conn, games_df, publisher_df, developer_df, genre_df, genre_assignment_df, developer_assignment_df, publisher_assignment_df)
 
     assert mock_conn.execute.call_count > 0
 
