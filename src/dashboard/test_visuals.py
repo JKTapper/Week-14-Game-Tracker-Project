@@ -23,6 +23,7 @@ def test_find_mean_price_none(mock_fetch):
     result = find_mean_price()
 
     assert result == "N/A"
+    mock_fetch.assert_called_once()
 
 
 @patch("src.dashboard.visuals.fetch_game_data")
@@ -35,6 +36,7 @@ def test_find_new_release_count(mock_fetch):
     assert result == 5
     # Check query includes correct interval
     assert "30 days" in mock_fetch.call_args[0][0]
+    mock_fetch.assert_called_once()
 
 
 @patch("src.dashboard.visuals.fetch_game_data")
@@ -45,3 +47,4 @@ def test_find_free_count(mock_fetch):
     result = find_free_count()
 
     pd.testing.assert_series_equal(result, pd.Series([12], name="free_count"))
+    mock_fetch.assert_called_once()
