@@ -9,9 +9,9 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy the application code
-COPY database.py .
-COPY visuals.py .
-COPY dashboard.py .
+COPY src/dashboard/database.py .
+COPY src/dashboard/visuals.py .
+COPY src/dashboard/dashboard.py .
 
 # Expose the Streamlit port
 EXPOSE 8501
