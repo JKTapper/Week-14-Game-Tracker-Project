@@ -1,4 +1,4 @@
-'''Resets database'''
+# pylint: skip-file
 import os
 from dotenv import load_dotenv
 import psycopg2
@@ -36,5 +36,5 @@ def run_schema(conn):
 
 
 if __name__ == "__main__":
-    main_conn = connect_to_rds()
-    run_schema(main_conn)
+    conn = connect_to_rds()
+    run_schema(conn)
