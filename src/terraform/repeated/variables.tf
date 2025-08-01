@@ -18,6 +18,31 @@ variable "ecs-cluster-name" {
   default = "streamlit-cluster"
 }
 
+variable "DATABASE_IP" {
+  description = "IP to access the RDS"
+  type        = string
+}
+variable "DATABASE_PORT" {
+  description = "Port for Postgres"
+  type        = string
+}
+variable "DATABASE_USERNAME" {
+  description = "Group-specific username for RDS"
+  type        = string
+}
+variable "DATABASE_PASSWORD" {
+  description = "Group-specific password for RDS"
+  type        = string
+}
+variable "DATABASE_NAME" {
+  description = "Database name for RDS"
+  type        = string
+}
+variable "DB_SCHEMA" {
+  description = "Group-specific schema for RDS"
+  type        = string
+}
+
 variable "DB_HOST" {
   description = "IP to access the RDS"
   type        = string
@@ -34,11 +59,8 @@ variable "DB_PASSWORD" {
   description = "Group-specific password for RDS"
   type        = string
 }
+
 variable "DB_NAME" {
   description = "Database name for RDS"
-  type        = string
-}
-variable "DB_SCHEMA" {
-  description = "Group-specific schema for RDS"
   type        = string
 }
