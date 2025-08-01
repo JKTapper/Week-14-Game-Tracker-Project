@@ -1,3 +1,4 @@
+#pylint: skip-file
 import pytest
 import pandas as pd
 from form import app
