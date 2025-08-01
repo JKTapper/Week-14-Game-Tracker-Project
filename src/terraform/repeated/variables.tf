@@ -1,18 +1,21 @@
 variable "lambda_image_uri" {
   description = "ECR image URI"
 }
+variable "lambda_image_uri_tl" {
+  description = "ECR image tl URI"
+}
 
 variable "ecr_repo_name" {
-  default = "c18-game-tracker-ecr"
+  default     = "c18-game-tracker-ecr"
   description = "ecr repo name"
 }
 variable "image_tag" {
-    default = "dashboard"
-    description = "Docker tag"
+  default     = "dashboard"
+  description = "Docker tag"
 }
 
-variable "ecs-cluster-name"{
-    default = "streamlit-cluster"
+variable "ecs-cluster-name" {
+  default = "streamlit-cluster"
 }
 
 variable "DB_HOST" {
