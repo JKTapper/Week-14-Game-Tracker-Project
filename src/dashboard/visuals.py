@@ -13,6 +13,7 @@ def find_mean_price() -> str:
             SELECT AVG(price) as avg_price
             FROM game
             where price > 0
+            AND currency = 'GBP'
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)
@@ -20,7 +21,7 @@ def find_mean_price() -> str:
     avg_price_value = price_df['avg_price'].iloc[0]
 
     if avg_price_value is not None:
-        average_price = f"£{avg_price_value / 10000:.2f}"
+        average_price = f"£{avg_price_value / 100:.2f}"
     else:
         average_price = "N/A"
 
@@ -125,12 +126,13 @@ def price_distribution_histogram():
             SELECT price
             FROM game
             WHERE price > 0
+            AND currency = 'GBP'
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
 
     price_df = game_df.dropna(subset=['price'])
-    price_df['price'] = pd.to_numeric(price_df['price']/10000, errors='coerce')
+    price_df['price'] = pd.to_numeric(price_df['price']/100, errors='coerce')
     hist_chart = alt.Chart(price_df).mark_bar().encode(
         x=alt.X('price:Q', bin=alt.Bin(maxbins=10), title='Price (£)'),
         y=alt.Y('count()', title='Number of Games'),
