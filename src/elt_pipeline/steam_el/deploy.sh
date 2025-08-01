@@ -1,6 +1,6 @@
 # Command to build and push docker image to ecr
 # Must be run at root of repo
-# Use bash deploy.sh 
+# Use `bash src/elt_pipeline/steam_el/deploy.sh`
 
 aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 129033205317.dkr.ecr.eu-west-2.amazonaws.com
 

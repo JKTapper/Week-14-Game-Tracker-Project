@@ -1,8 +1,8 @@
 """Test suite for the functions in the transformation code"""
 import pandas as pd
 import pytest
-from src.elt_pipeline.transform.transform import get_assignment_df, process_data
-from src.elt_pipeline.transform.transform import extract_memory_requirements, get_reference_data
+from unittest.mock import MagicMock, patch
+from src.elt_pipeline.steam_tl.transform_and_load_to_rds import get_assignment_df, process_data, extract_memory_requirements, get_reference_data
 
 get_assignment_df_test_data = [(
     pd.DataFrame({
@@ -23,14 +23,21 @@ get_assignment_df_test_data = [(
 )]
 
 
+@patch('src.elt_pipeline.steam_tl.transform_and_load_to_rds.get_or_create_id')
 @pytest.mark.parametrize(
     'main_df,reference_df,main_df_name,reference_df_name,assignment_df',
     get_assignment_df_test_data
 )
-def test_get_assignment_df(main_df, reference_df, main_df_name, reference_df_name, assignment_df):
+def test_get_assignment_df(mock_get_or_create_id, main_df, reference_df, main_df_name, reference_df_name, assignment_df):
     """Tests whether get_assignment_df correctly generates an assignment table"""
-    assert get_assignment_df(main_df, reference_df,
-                             main_df_name, reference_df_name).equals(assignment_df)
+    name_to_id = {'Tennis': 1, 'Chess': 2, 'Knitting': 3}
+    mock_get_or_create_id.side_effect = lambda conn, table, name_col, name_val, id_col: name_to_id[
+        name_val]
+    conn = MagicMock()
+    result = get_assignment_df(
+        main_df, reference_df, main_df_name, reference_df_name, conn)
+
+    assert result.equals(assignment_df)
 
 
 process_data_test_data = [

@@ -20,9 +20,12 @@ def run_pipeline():
     steam_html = get_html(STEAM_URL)
     # can limit number that are used
     scraped_games = parse_games_bs(steam_html)
+    logging.info(f'Scraped {len(scraped_games)} games from steam')
     new_games = [
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
     logging.info(f'Scraped {len(new_games)} new games')
+    if not new_games:
+        return None
 
     # Add data from API
     full_game_data = iterate_through_scraped_games(new_games)

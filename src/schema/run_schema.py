@@ -2,12 +2,14 @@ import os
 from dotenv import load_dotenv
 import psycopg2
 
+
 def connect_to_rds():
     """
     Connection to aws rds
     """
     load_dotenv()
-    print(os.getenv("DB_HOST"),os.getenv("DB_USERNAME"),os.getenv("DB_PASSWORD"),os.getenv("DB_NAME"))
+    print(os.getenv("DB_HOST"), os.getenv("DB_USERNAME"),
+          os.getenv("DB_PASSWORD"), os.getenv("DB_NAME"))
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
         port=5432,
@@ -32,8 +34,6 @@ def run_schema(conn):
     conn.close()
 
 
-
 if __name__ == "__main__":
     conn = connect_to_rds()
     run_schema(conn)
-
