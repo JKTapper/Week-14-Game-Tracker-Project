@@ -1,4 +1,3 @@
-'''Summary module'''
 import os
 from dotenv import load_dotenv
 import psycopg2
@@ -23,7 +22,6 @@ def connect_to_rds():
 
 
 def query_rds(conn, query):
-    '''Reads query'''
     return pd.read_sql(query, conn)
 
 
