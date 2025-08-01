@@ -1,11 +1,11 @@
+# pylint: disable=line-too-long
 """Script to take transformed data and stores into our RDS Postgres Database"""
 import os
+from datetime import datetime, date
+import re
 from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine, text, Engine
-from datetime import datetime, date
-import re
-import pandas as pd
 import awswrangler as wr
 from psycopg2 import connect
 from psycopg2.extensions import connection
@@ -95,7 +95,6 @@ def iterrows_dict(df: pd.DataFrame) -> dict:
 
 
 def get_assignment_df(main_table: pd.DataFrame,
-                      reference_table: pd.DataFrame,
                       main_table_name: str,
                       reference_table_name: str,
                       conn):
@@ -152,8 +151,7 @@ def extract_memory_requirements(requirements: dict) -> str:
         ).group()
         if match:
             return match
-        else:
-            return None
+        return None
     except Exception:
         return None
 
@@ -243,9 +241,9 @@ def transform_s3_steam_data(conn):
         'genre': genres['new'],
         'publisher': publishers['new'],
         'developer': developers['new'],
-        'genre_assignment': get_assignment_df(new_data, genres['all'], 'game', 'genre', conn),
-        'publisher_assignment': get_assignment_df(new_data, publishers['all'], 'game', 'publisher', conn),
-        'developer_assignment': get_assignment_df(new_data, developers['all'], 'game', 'developer', conn),
+        'genre_assignment': get_assignment_df(new_data, 'game', 'genre', conn),
+        'publisher_assignment': get_assignment_df(new_data, 'game', 'publisher', conn),
+        'developer_assignment': get_assignment_df(new_data, 'game', 'developer', conn),
         'game': game_data
     }
 
