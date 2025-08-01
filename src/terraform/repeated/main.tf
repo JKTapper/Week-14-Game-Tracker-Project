@@ -95,20 +95,20 @@ resource "aws_cloudwatch_event_target" "lambda_target" {
 resource "aws_lambda_function" "docker_lambda_tl" {
   function_name = "c18-game-tracker-tl-lambda"
   package_type  = "Image"
-  image_uri     = var.lambda_image_uri
+  image_uri     = var.lambda_image_uri_tl
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
   timeout       = 60
   memory_size   = 512
 
   environment {
     variables = {
-      LOG_LEVEL   = "INFO"
-      DB_HOST     = var.DB_HOST
-      DB_PORT     = var.DB_PORT
-      DB_USER     = var.DB_USER
-      DB_PASSWORD = var.DB_PASSWORD
-      DB_NAME     = var.DB_NAME
-      DB_SCHEMA   = "public"
+      LOG_LEVEL         = "INFO"
+      DATABASE_IP       = var.DATABASE_IP
+      DATABASE_PORT     = var.DATABASE_PORT
+      DATABASE_USERNAME = var.DATABASE_USERNAME
+      DATABASE_PASSWORD = var.DATABASE_PASSWORD
+      DATABASE_NAME     = var.DATABASE_NAME
+      DB_SCHEMA         = "public"
     }
   }
 }
@@ -132,9 +132,6 @@ resource "aws_cloudwatch_event_target" "tl_target" {
   target_id = "lambda-tl"
   arn       = aws_lambda_function.docker_lambda_tl.arn
 }
-
-
-
 
 
 # Existing data
