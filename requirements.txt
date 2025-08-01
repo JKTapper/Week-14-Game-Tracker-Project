@@ -18,3 +18,5 @@ psycopg2-binary
 bs4
 requests
 boto3
+streamlit==1.47.1
+altair
