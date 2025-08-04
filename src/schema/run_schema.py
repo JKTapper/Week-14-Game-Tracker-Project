@@ -27,7 +27,7 @@ def run_schema(conn):
     """
     cur = conn.cursor()
 
-    with open("schema.sql", "r", encoding='utf-8') as f:
+    with open("src/schema/schema.sql", "r", encoding='utf-8') as f:
         cur.execute(f.read())
 
     conn.commit()
