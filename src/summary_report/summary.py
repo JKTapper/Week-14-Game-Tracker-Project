@@ -8,6 +8,7 @@ from pypdf import PdfWriter
 from visuals import count_releases_by_day, most_common_genres
 
 
+
 def connect_to_rds():
     """
     Connection to aws rds
@@ -27,7 +28,6 @@ def connect_to_rds():
 
 def query_rds(conn, query):
     return pd.read_sql(query, conn)
-
 
 CONTENTS = [
     "Contents:",
