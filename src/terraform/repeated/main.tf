@@ -245,13 +245,13 @@ resource "aws_ecs_service" "dashboard_service" {
 
 # CloudWatch Logs
 resource "aws_cloudwatch_log_group" "form_app_logs" {
-  name              = "/ecs/c18-form-app"
+  name              = "/ecs/c18-game-tracker-form-app"
   retention_in_days = 7
 }
 
 # ECS Task Definition for Flask Form App
 resource "aws_ecs_task_definition" "form_app_task" {
-  family                   = "c18-form-app"
+  family                   = "c18-game-tracker-form-app"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "512"
@@ -266,7 +266,7 @@ resource "aws_ecs_task_definition" "form_app_task" {
 
   container_definitions = jsonencode([
     {
-      name      = "c18-form-app"
+      name      = "c18-game-tracker-form-app"
       image     = "${data.aws_ecr_repository.repo.repository_url}:form"
       cpu       = 256
       memory    = 1024
@@ -289,7 +289,7 @@ resource "aws_ecs_task_definition" "form_app_task" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/c18-form-app"
+          awslogs-group         = "/ecs/c18-game-tracker-form-app"
           awslogs-region        = "eu-west-2"
           awslogs-stream-prefix = "form"
         }
@@ -300,7 +300,7 @@ resource "aws_ecs_task_definition" "form_app_task" {
 
 # ECS Service for Flask Form App
 resource "aws_ecs_service" "form_app_service" {
-  name            = "c18-form-app-service"
+  name            = "c18-game-tracker-form-app-service"
   cluster         = data.aws_ecs_cluster.existing.id
   task_definition = aws_ecs_task_definition.form_app_task.arn
   desired_count   = 1
