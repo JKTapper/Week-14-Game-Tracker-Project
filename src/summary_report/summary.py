@@ -43,7 +43,7 @@ if __name__ == "__main__":
     data = query_rds(connection, "select * from game;")
     summary = canvas.Canvas("0.pdf")
     for line_numer, line in enumerate(CONTENTS):
-        summary.drawString(100, 500-10*line_numer, line)
+        summary.drawString(100, 500-15*line_numer, line)
     summary.showPage()
     summary.save()
     chart = most_common_genres()

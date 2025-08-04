@@ -72,7 +72,7 @@ def count_releases_by_day():
             """
     game_df = fetch_game_data(query)
 
-    # game_df['release_date'] = pd.to_datetime(game_df['release_date'])
+    game_df['release_date'] = pd.to_datetime(game_df['release_date'])
 
     daily_release_counts = game_df.groupby(
         game_df['release_date']
