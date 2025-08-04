@@ -1,3 +1,4 @@
+# pylint: skip-file
 """Test suite for the functions in the transformation code"""
 import pandas as pd
 import pytest
