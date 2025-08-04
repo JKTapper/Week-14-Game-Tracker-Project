@@ -35,7 +35,7 @@ def test_get_assignment_df(mock_get_or_create_id, main_df, reference_df, main_df
         name_val]
     conn = MagicMock()
     result = get_assignment_df(
-        main_df, reference_df, main_df_name, reference_df_name, conn)
+        main_df, main_df_name, reference_df_name, conn)
 
     assert result.equals(assignment_df)
 

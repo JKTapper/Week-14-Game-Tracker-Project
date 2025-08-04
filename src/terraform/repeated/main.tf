@@ -95,20 +95,20 @@ resource "aws_cloudwatch_event_target" "lambda_target" {
 resource "aws_lambda_function" "docker_lambda_tl" {
   function_name = "c18-game-tracker-tl-lambda"
   package_type  = "Image"
-  image_uri     = var.lambda_image_uri
+  image_uri     = var.lambda_image_uri_tl
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
   timeout       = 60
   memory_size   = 512
 
   environment {
     variables = {
-      LOG_LEVEL   = "INFO"
-      DB_HOST     = var.DB_HOST
-      DB_PORT     = var.DB_PORT
-      DB_USER     = var.DB_USER
-      DB_PASSWORD = var.DB_PASSWORD
-      DB_NAME     = var.DB_NAME
-      DB_SCHEMA   = "public"
+      LOG_LEVEL         = "INFO"
+      DATABASE_IP       = var.DATABASE_IP
+      DATABASE_PORT     = var.DATABASE_PORT
+      DATABASE_USERNAME = var.DATABASE_USERNAME
+      DATABASE_PASSWORD = var.DATABASE_PASSWORD
+      DATABASE_NAME     = var.DATABASE_NAME
+      DB_SCHEMA         = "public"
     }
   }
 }
@@ -132,9 +132,6 @@ resource "aws_cloudwatch_event_target" "tl_target" {
   target_id = "lambda-tl"
   arn       = aws_lambda_function.docker_lambda_tl.arn
 }
-
-
-
 
 
 # Existing data
@@ -241,4 +238,83 @@ resource "aws_ecs_service" "dashboard_service" {
   }
 
   depends_on = [aws_ecs_task_definition.service]
+}
+
+
+
+
+# CloudWatch Logs
+resource "aws_cloudwatch_log_group" "form_app_logs" {
+  name              = "/ecs/c18-game-tracker-form-app"
+  retention_in_days = 7
+}
+
+# ECS Task Definition for Flask Form App
+resource "aws_ecs_task_definition" "form_app_task" {
+  family                   = "c18-game-tracker-form-app"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = "arn:aws:iam::129033205317:role/ecsTaskExecutionRole"
+  task_role_arn            = "arn:aws:iam::129033205317:role/ecsTaskExecutionRole"
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
+  container_definitions = jsonencode([
+    {
+      name      = "c18-game-tracker-form-app"
+      image     = "${data.aws_ecr_repository.repo.repository_url}:form"
+      cpu       = 256
+      memory    = 1024
+      essential = true
+      portMappings = [
+        {
+          containerPort = 8000
+          hostPort      = 8000
+          protocol      = "tcp"
+        }
+      ]
+      environment = [
+        { name = "DB_HOST", value = var.DB_HOST },
+        { name = "DB_PORT", value = var.DB_PORT },
+        { name = "DB_USERNAME", value = var.DB_USER },
+        { name = "DB_PASSWORD", value = var.DB_PASSWORD },
+        { name = "DB_NAME", value = var.DB_NAME },
+        { name = "DB_SCHEMA", value = var.DB_SCHEMA }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = "/ecs/c18-game-tracker-form-app"
+          awslogs-region        = "eu-west-2"
+          awslogs-stream-prefix = "form"
+        }
+      }
+    }
+  ])
+}
+
+# ECS Service for Flask Form App
+resource "aws_ecs_service" "form_app_service" {
+  name            = "c18-game-tracker-form-app-service"
+  cluster         = data.aws_ecs_cluster.existing.id
+  task_definition = aws_ecs_task_definition.form_app_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets = [
+      data.aws_subnet.public_1.id,
+      data.aws_subnet.public_2.id,
+      data.aws_subnet.public_3.id
+    ]
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true
+  }
+
+  depends_on = [aws_ecs_task_definition.form_app_task]
 }

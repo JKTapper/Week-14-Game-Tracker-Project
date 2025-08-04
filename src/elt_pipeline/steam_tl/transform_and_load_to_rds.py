@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 """Script to take transformed data and stores into our RDS Postgres Database"""
 import os
 import logging
@@ -92,7 +93,6 @@ def iterrows_dict(df: pd.DataFrame) -> dict:
 
 
 def get_assignment_df(main_table: pd.DataFrame,
-                      reference_table: pd.DataFrame,
                       main_table_name: str,
                       reference_table_name: str,
                       conn):
@@ -155,8 +155,7 @@ def extract_memory_requirements(requirements: dict) -> str:
         ).group()
         if match:
             return match
-        else:
-            return None
+        return None
     except Exception:
         return None
 

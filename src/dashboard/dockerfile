@@ -1,0 +1,20 @@
+# Use Python as the base image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt ./
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY src/dashboard/database.py ./
+COPY src/dashboard/visuals.py ./
+COPY src/dashboard/dashboard.py ./
+
+# Expose the Streamlit port
+EXPOSE 8501
+
+# Command to run the Streamlit app
+CMD ["streamlit", "run", "./dashboard.py", "--server.port=8501"]
