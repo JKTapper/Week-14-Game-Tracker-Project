@@ -37,6 +37,8 @@ typing_extensions==4.14.1
 tzdata==2025.2
 urllib3==2.5.0
 requests_mock
+streamlit==1.47.1
+altair
 
 flask
 sqlalchemy
