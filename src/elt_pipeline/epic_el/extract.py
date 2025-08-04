@@ -162,7 +162,7 @@ def main() -> list[dict]:
 
     release_cutoff = datetime.today().date()
 
-    release_cutoff = datetime.strptime("03/08/2025", "%d/%m/%Y").date()
+    # release_cutoff = datetime.strptime("20/03/2024", "%d/%m/%Y").date()
 
     full_game_data = iterate_through_scraped_games(new_games, release_cutoff)
     print(json.dumps(full_game_data, indent=2))
