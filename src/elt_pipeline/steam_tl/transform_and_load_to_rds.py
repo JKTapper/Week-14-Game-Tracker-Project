@@ -6,7 +6,6 @@ import pandas as pd
 from sqlalchemy import create_engine, text, Engine
 from datetime import datetime, date
 import re
-import pandas as pd
 import awswrangler as wr
 from psycopg2 import connect
 from psycopg2.extensions import connection
@@ -193,6 +192,8 @@ GAME_DATA_TRANSLATION = [
         'value': STEAM_STORE_ID},
     {'name': 'currency',
         'translation': lambda x: 'GBP' if pd.isna(x) else x},
+    {'old_name': 'image', 'new_name': 'image_url',
+        'translation': lambda x: x}
 ]
 
 
@@ -309,10 +310,10 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
 
     sql = text("""
         INSERT INTO game (
-          game_id, game_name, app_id, store_id, release_date,
+          game_id, game_name, app_id, store_id, release_date, image_url, 
           game_description, storage_requirements, price, currency
         ) VALUES (
-          :game_id, :game_name, :app_id, :store_id, :release_date,
+          :game_id, :game_name, :app_id, :store_id, :release_date, :image_url, 
           :game_description, :storage_requirements, :price, :currency
         )
         ON CONFLICT (app_id) DO NOTHING
@@ -325,6 +326,7 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
             "app_id": row["app_id"],
             "store_id": row["store_id"],
             "release_date": row["release_date"],
+            "image_url": row["image_url"],
             "game_description": row["description"],
             "storage_requirements": row["storage_requirements"],
             "price": row["price"],
@@ -332,7 +334,10 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
         })
 
 
-def upload_assignments(conn, df: pd.DataFrame, table: str, left_foreign_key: str, right_foreign_key: str) -> None:
+def upload_assignments(conn, df: pd.DataFrame,
+                       table: str,
+                       left_foreign_key: str,
+                       right_foreign_key: str) -> None:
     """Generic function to help with genre, publisher and developer assignment"""
     sql = text(f"""
         INSERT INTO {table} ({left_foreign_key}, {right_foreign_key})
@@ -426,8 +431,13 @@ def main():
             developer_assignment_df = data["developer_assignment"]
             publisher_assignment_df = data["publisher_assignment"]
 
-            load_data_into_database(conn, games_df, publisher_df, developer_df, genre_df,
-                                    genre_assignment_df, developer_assignment_df, publisher_assignment_df)
+            load_data_into_database(
+                conn, games_df, publisher_df,
+                developer_df, genre_df,
+                genre_assignment_df,
+                developer_assignment_df,
+                publisher_assignment_df
+            )
 
 
 if __name__ == "__main__":

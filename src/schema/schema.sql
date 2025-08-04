@@ -4,10 +4,6 @@ DROP TABLE IF EXISTS subscriber_publisher_assignment;
 
 DROP TABLE IF EXISTS subscriber_developer_assignment;
 
-DROP TABLE IF EXISTS video;
-
-DROP TABLE IF EXISTS image;
-
 DROP TABLE IF EXISTS genre_assignment;
 
 DROP TABLE IF EXISTS developer_assignment;
@@ -59,6 +55,7 @@ CREATE TABLE game (
     storage_requirements TEXT,
     price INT,
     currency TEXT,
+    image_url TEXT,
     FOREIGN KEY (store_id) REFERENCES store (store_id)
 );
 
@@ -86,22 +83,6 @@ CREATE TABLE publisher_assignment (
     publisher_id INT NOT NULL,
     game_id INT NOT NULL,
     FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id),
-    FOREIGN KEY (game_id) REFERENCES game (game_id)
-);
-
--- Game Images
-CREATE TABLE image (
-    image_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    url_image TEXT NOT NULL UNIQUE,
-    game_id INT,
-    FOREIGN KEY (game_id) REFERENCES game (game_id)
-);
-
--- Game Videos
-CREATE TABLE video (
-    video_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    url_video TEXT NOT NULL UNIQUE,
-    game_id INT,
     FOREIGN KEY (game_id) REFERENCES game (game_id)
 );
 
