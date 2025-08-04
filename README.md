@@ -40,7 +40,7 @@ on their favourite genres.
             - Contains terraform scripts for one-time setups e.g. databases and container repos
         - repeated
             - Contains terraform scripts for repeated setups (when debugging is required) e.g. lambda functions
-- test
+- tests
     - Contains testing scripts for each module
 
 ## How to run
