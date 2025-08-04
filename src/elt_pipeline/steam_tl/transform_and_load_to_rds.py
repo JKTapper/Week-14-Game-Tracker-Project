@@ -14,7 +14,7 @@ from psycopg2.extras import RealDictCursor
 import numpy as np
 
 BUCKET = 'c18-game-tracker-s3'
-S3_PATH = f"s3://{BUCKET}/input/store_name"
+S3_PATH = f"s3://{BUCKET}/input/"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -218,7 +218,7 @@ def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
     Reads data in the S3, discards any data already in the RDS and
     transforms it into the correct format to be uploaded to the RDS
     """
-    raw_df = wr.s3.read_parquet(S3_PATH.replace('store_name', store_name))
+    raw_df = wr.s3.read_parquet(S3_PATH + store_name)
     raw_df['app_id'] = raw_df['app_id'].astype(int)
     logging.info("Data about %s games downloaded from S3", len(raw_df))
 
