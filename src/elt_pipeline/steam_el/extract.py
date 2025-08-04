@@ -10,7 +10,7 @@ import awswrangler as wr
 import boto3
 
 STEAM_URL = "https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english"
-S3_PATH = "s3://c18-game-tracker-s3/input/"
+S3_PATH = "s3://c18-game-tracker-s3/input/steam"
 
 
 def get_session() -> boto3.Session:
