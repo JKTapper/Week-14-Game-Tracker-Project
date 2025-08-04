@@ -7,7 +7,7 @@ import awswrangler as wr
 import boto3
 from epicstore_api import EpicGamesStoreAPI, OfferData
 
-S3_PATH = "s3://c18-game-tracker-s3/input/epic/"
+S3_PATH = "s3://c18-game-tracker-s3/input/"
 api = EpicGamesStoreAPI()
 
 
@@ -27,7 +27,7 @@ def get_existing_games(path: str, session) -> list[str]:
         df = wr.s3.read_parquet(path, dataset=True, columns=[
             'app_id'], boto3_session=session)
         return df['app_id'].astype(str).tolist()
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         logging.error(f"No existing data found in S3: {e}")
         return []
 
@@ -49,13 +49,13 @@ def get_epic_game_summaries() -> list:
                 if 'offer' in page and 'id' in page['offer']:
                     offer = page.get('offer', {})
                     offer_id = offer.get('id')
-                if offer_id:
-                    summaries.append({
-                        'app_id': offer_id,
-                        'url': f"https://store.epicgames.com/en-US/p/{slug}"
-                    })
+                    if offer_id:
+                        summaries.append({
+                            'app_id': offer_id,
+                            'url': f"https://store.epicgames.com/en-US/p/{slug}"
+                        })
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logging.warning(f"Error getting data for {slug}: {e}")
             continue
 
@@ -92,7 +92,7 @@ def get_epic_game_details(offer_id: str, namespace: str = '') -> dict:
             'image': catalog.get('keyImages', [{}])[0].get('url', ''),
             'release': release_date
         }
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         logging.warning(f"Error fetching details for {offer_id}: {e}")
         return {
             'app_id': offer_id,
@@ -143,7 +143,7 @@ def fetch_game_with_release_check(item, product_map, release_cutoff) -> dict | N
             release_dt = datetime.fromisoformat(release_str.replace('Z', ''))
             if release_dt.date() == release_cutoff:
                 return {**item, **details}
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         logging.warning(f"Error parsing release date for {app_id}: {e}")
 
     return None
