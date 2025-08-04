@@ -9,7 +9,7 @@ We planned and implemented an ELT pipeline to store clean data on new releases:
 - S3 to RDS - transform raw data and upload to the RDS which supplies the dashboard with its data
 We developed a dashboard to showcase insights about recent releases - this is currently hosted at (here)[http://35.179.94.130:8501/].
 
-We also created a subscriber system that involves a form - users can input their email and opt in to receive weekly reports and/or notifications
+We also created a subscriber system that involves a form - users can input their email and opt in to receive weekly reports and/or notifications - this is currently hosted (here)[http://18.168.201.236:8000/].
 on their favourite genres.
 
 ## Technologies used
