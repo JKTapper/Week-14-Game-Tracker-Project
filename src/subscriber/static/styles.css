@@ -1,0 +1,33 @@
+div{
+    display: grid;
+    place-items: center;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Exo+2&display=swap');
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: black;
+    color: #FF8C00;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 16px;
+}
+input {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 20px;
+    color: #FF8C00;
+    background-color: black;
+    border: 2px solid #FF8C00;
+    padding: 12px 24px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+input:hover {
+    background-color: #FF8C00;
+    color: black;
+}
