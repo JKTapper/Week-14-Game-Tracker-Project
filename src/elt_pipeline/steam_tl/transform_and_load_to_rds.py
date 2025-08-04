@@ -2,11 +2,11 @@
 """Script to take transformed data and stores into our RDS Postgres Database"""
 import os
 import logging
+from datetime import datetime, date
+import re
 from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine, text, Engine
-from datetime import datetime, date
-import re
 import awswrangler as wr
 from psycopg2 import connect
 from psycopg2.extensions import connection
@@ -221,7 +221,7 @@ def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
     try:
         raw_df = wr.s3.read_parquet(S3_PATH + store_name)
     except Exception as e:
-        logging.error(f'Error reading S3 path {S3_PATH + store_name}: {e}')
+        logging.error('Error reading S3 path %s: %s', S3_PATH + store_name, e)
         return {
             'genre': pd.DataFrame(),
             'publisher': pd.DataFrame(),
@@ -434,7 +434,7 @@ def main():
                 data = transform_s3_steam_data(conn, store_name)
                 if data['game'].empty:
                     logging.warning(
-                        f"No new game data for {store_name}, skipping upload.")
+                        "No new game data for %s, skipping upload.", store_name)
                     continue
                 data["game"]['store_id'] = store_id
                 load_data_into_database(
