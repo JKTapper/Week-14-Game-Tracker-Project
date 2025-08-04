@@ -13,7 +13,7 @@ from psycopg2.extras import RealDictCursor
 import numpy as np
 
 BUCKET = 'c18-game-tracker-s3'
-S3_PATH = f"s3://{BUCKET}/input/"
+S3_PATH = f"s3://{BUCKET}/input/store_name"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -173,8 +173,6 @@ def interpret_release_date(release_date: str) -> date:
         return None
 
 
-STEAM_STORE_ID = 1
-
 GAME_DATA_TRANSLATION = [
     {'old_name': 'release', 'new_name': 'release_date',
         'translation': interpret_release_date},
@@ -188,8 +186,6 @@ GAME_DATA_TRANSLATION = [
         'translation': lambda x: x},
     {'name': 'app_id',
         'translation': lambda x: x},
-    {'name': 'store_id',
-        'value': STEAM_STORE_ID},
     {'name': 'currency',
         'translation': lambda x: 'GBP' if pd.isna(x) else x},
     {'old_name': 'image', 'new_name': 'image_url',
@@ -218,12 +214,12 @@ def get_game_id(count: int) -> list[int]:
     return new_ids
 
 
-def transform_s3_steam_data(conn):
+def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
     """
     Reads data in the S3, discards any data already in the RDS and
     transforms it into the correct format to be uploaded to the RDS
     """
-    raw_df = wr.s3.read_parquet(S3_PATH)
+    raw_df = wr.s3.read_parquet(S3_PATH.replace('store_name', store_name))
     raw_df['app_id'] = raw_df['app_id'].astype(int)
     logging.info("Data about %s games downloaded from S3", len(raw_df))
 
@@ -422,22 +418,16 @@ def main():
     engine = get_engine()
     with engine.connect() as conn:
         with conn.begin():
-            data = transform_s3_steam_data(conn)
-            games_df = data["game"]
-            publisher_df = data["publisher"]
-            developer_df = data["developer"]
-            genre_df = data["genre"]
-            genre_assignment_df = data["genre_assignment"]
-            developer_assignment_df = data["developer_assignment"]
-            publisher_assignment_df = data["publisher_assignment"]
-
-            load_data_into_database(
-                conn, games_df, publisher_df,
-                developer_df, genre_df,
-                genre_assignment_df,
-                developer_assignment_df,
-                publisher_assignment_df
-            )
+            for store_id, store_name in enumerate(['steam', 'epic'], 1):
+                data = transform_s3_steam_data(conn, store_name)
+                data["game"]['store_id'] = store_id
+                load_data_into_database(
+                    conn, data["game"], data["publisher"],
+                    data["developer"], data["genre"],
+                    data["genre_assignment"],
+                    data["developer_assignment"],
+                    data["publisher_assignment"]
+                )
 
 
 if __name__ == "__main__":
