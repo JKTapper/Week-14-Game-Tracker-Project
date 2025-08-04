@@ -25,7 +25,7 @@
         <label for="genre">Game Genre:</label>
         {% for genre in genres %}
         <br>
-        <option value="{{ genre }}">{{ genre }}</option>
+        <option value="{{ genre }}"></option>
         <input type="checkbox" name="genre" value="{{genre}}">
         <label for="{{genre}}"> {{genre}}</label><br>
         {% endfor %}

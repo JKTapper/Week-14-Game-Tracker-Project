@@ -39,6 +39,5 @@ urllib3==2.5.0
 requests_mock
 streamlit==1.47.1
 altair
-
 flask
 sqlalchemy

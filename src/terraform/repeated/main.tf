@@ -239,3 +239,82 @@ resource "aws_ecs_service" "dashboard_service" {
 
   depends_on = [aws_ecs_task_definition.service]
 }
+
+
+
+
+# CloudWatch Logs
+resource "aws_cloudwatch_log_group" "form_app_logs" {
+  name              = "/ecs/c18-form-app"
+  retention_in_days = 7
+}
+
+# ECS Task Definition for Flask Form App
+resource "aws_ecs_task_definition" "form_app_task" {
+  family                   = "c18-form-app"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = "arn:aws:iam::129033205317:role/ecsTaskExecutionRole"
+  task_role_arn            = "arn:aws:iam::129033205317:role/ecsTaskExecutionRole"
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
+  container_definitions = jsonencode([
+    {
+      name      = "c18-form-app"
+      image     = "${data.aws_ecr_repository.repo.repository_url}:form"
+      cpu       = 256
+      memory    = 1024
+      essential = true
+      portMappings = [
+        {
+          containerPort = 8000
+          hostPort      = 8000
+          protocol      = "tcp"
+        }
+      ]
+      environment = [
+        { name = "DB_HOST", value = var.DB_HOST },
+        { name = "DB_PORT", value = var.DB_PORT },
+        { name = "DB_USERNAME", value = var.DB_USER },
+        { name = "DB_PASSWORD", value = var.DB_PASSWORD },
+        { name = "DB_NAME", value = var.DB_NAME },
+        { name = "DB_SCHEMA", value = var.DB_SCHEMA }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = "/ecs/c18-form-app"
+          awslogs-region        = "eu-west-2"
+          awslogs-stream-prefix = "form"
+        }
+      }
+    }
+  ])
+}
+
+# ECS Service for Flask Form App
+resource "aws_ecs_service" "form_app_service" {
+  name            = "c18-form-app-service"
+  cluster         = data.aws_ecs_cluster.existing.id
+  task_definition = aws_ecs_task_definition.form_app_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets = [
+      data.aws_subnet.public_1.id,
+      data.aws_subnet.public_2.id,
+      data.aws_subnet.public_3.id
+    ]
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true
+  }
+
+  depends_on = [aws_ecs_task_definition.form_app_task]
+}

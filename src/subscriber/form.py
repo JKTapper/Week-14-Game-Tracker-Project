@@ -2,16 +2,24 @@
 Flask app to run form for user subscriptions
 """
 import os
+import logging
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from flask import Flask, render_template, request
+from sqlalchemy.engine import Engine, Connection
+from flask import Flask, render_template, request, Response
+
+from typing import List, Union
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-def connect_to_rds():
+
+def connect_to_rds() -> Engine:
     """
-    Connection to aws rds
+    Connect to AWS RDS using environment variables.
     """
     load_dotenv()
     db_host = os.getenv("DB_HOST")
@@ -24,54 +32,66 @@ def connect_to_rds():
     return create_engine(db_url)
 
 
-
-def insert_sub_genre_assignment(conn, subscriber_id, genres_sub):
+def insert_sub_genre_assignment(conn: Connection, subscriber_id: int, genres_sub: List[str]) -> None:
     """
-    Insert statements for genre_assignment table 
+    Insert genre assignments for a subscriber.
     """
     for genre in genres_sub:
-        genre_id = conn.execute(text("""select genre_id from genre where genre_name = :genre"""),
-                    {"genre":genre}).fetchone()[0]
-        conn.execute(text("""insert into subscriber_genre_assignment (genre_id, subscriber_id)
-                        values (:genre_id, :subscriber_id)"""),
-                        {"genre_id":genre_id, "subscriber_id":subscriber_id})
+        genre_id = conn.execute(
+            text("SELECT genre_id FROM genre WHERE genre_name = :genre"),
+            {"genre": genre}
+        ).fetchone()[0]
+
+        conn.execute(
+            text("""INSERT INTO subscriber_genre_assignment (genre_id, subscriber_id)
+                    VALUES (:genre_id, :subscriber_id)"""),
+            {"genre_id": genre_id, "subscriber_id": subscriber_id}
+        )
+        logger.info(f"Assigned genre '{genre}' (id: {genre_id}) to subscriber {subscriber_id}")
 
 
 @app.route("/", methods=["GET", "POST"])
-def form():
+def form() -> Union[str, Response]:
     """
-    Route/render html form 
+    Display or process the subscription form.
     """
     connection = connect_to_rds()
 
     with connection.begin() as conn:
-        genres = pd.read_sql("select * from genre;", conn)["genre_name"]
+        genres = pd.read_sql("SELECT * FROM genre;", conn)["genre_name"]
 
     if request.method == "POST":
         email = request.form["email"]
-        genres_sub = request.form.getlist('genre')
+        genres_sub = request.form.getlist("genre")
         email_notifications = request.form.get("notifications", False)
         summary = request.form.get("summary", False)
 
         try:
             with connection.begin() as conn:
-                sub_id = conn.execute(
-                text("""INSERT INTO subscriber (subscriber_email, email_notifications, summary)
-                    VALUES (:email, :email_notifications, :summary) 
-                    returning subscriber_id"""),
-                {"email": email, "email_notifications":email_notifications,
-                "summary":summary}).fetchone()[0]
+                result = conn.execute(
+                    text("""INSERT INTO subscriber (subscriber_email, email_notifications, summary)
+                            VALUES (:email, :email_notifications, :summary)
+                            RETURNING subscriber_id"""),
+                    {
+                        "email": email,
+                        "email_notifications": email_notifications,
+                        "summary": summary,
+                    }
+                )
+                subscriber_id = result.fetchone()[0]
+                logger.info(f"Inserted subscriber {subscriber_id} with email {email}")
 
-                if genres_sub is not None:
-                    insert_sub_genre_assignment(conn, sub_id, genres_sub)
+                if genres_sub:
+                    insert_sub_genre_assignment(conn, subscriber_id, genres_sub)
 
                 return f"Thank you! We'll contact you at {email}."
 
-        except:
+        except Exception as e:
+            logger.error(f"Error inserting subscriber: {e}")
             return "Email already registered use another one"
-
 
     return render_template("form.html", genres=genres)
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8000)

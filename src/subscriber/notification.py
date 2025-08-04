@@ -8,7 +8,7 @@ from form import connect_to_rds
 
 def get_sub_notifications():
     """
-    Query RDS subsrcibers and the genres they want email notifications
+    Query RDS subcribers and the genres they want email notifications
     """
     connection = connect_to_rds()
     with connection.begin() as conn:
