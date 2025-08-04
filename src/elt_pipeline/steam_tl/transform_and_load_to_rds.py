@@ -1,11 +1,12 @@
 # pylint: disable=line-too-long
 """Script to take transformed data and stores into our RDS Postgres Database"""
 import os
-from datetime import datetime, date
-import re
+import logging
 from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine, text, Engine
+from datetime import datetime, date
+import re
 import awswrangler as wr
 from psycopg2 import connect
 from psycopg2.extensions import connection
@@ -14,6 +15,9 @@ import numpy as np
 
 BUCKET = 'c18-game-tracker-s3'
 S3_PATH = f"s3://{BUCKET}/input/"
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def get_db_connection() -> connection:
@@ -30,15 +34,9 @@ def get_db_connection() -> connection:
     return conn
 
 
-def read_db_table_into_df(table_name: str) -> pd.DataFrame:
+def read_db_table_into_df(table_name: str, conn) -> pd.DataFrame:
     """Returns the data in an RDS table as a dataframe"""
-    conn = None
-    try:
-        conn = get_db_connection()
-        return pd.read_sql(f"SELECT * FROM {table_name}", conn)
-    finally:
-        if conn is not None:
-            conn.close()
+    return pd.read_sql(f"SELECT * FROM {table_name}", conn)
 
 
 def get_reference_data(raw_data: pd.DataFrame,
@@ -118,6 +116,11 @@ def get_assignment_df(main_table: pd.DataFrame,
                     reference_table_name + '_id': reference_id
                 }
             )
+    if not assignment_table_rows:
+        return pd.DataFrame({
+            main_table_name + '_id': [],
+            reference_table_name + '_id': []
+        })
     return pd.DataFrame(assignment_table_rows)
 
 
@@ -134,6 +137,7 @@ def process_data(old_dataframe: pd.DataFrame,
                 column['translation'])
         elif 'value' in column:
             new_dataframe[column['new_name']] = column['value']
+        logging.info("%s collumn transformed", column['new_name'])
     return new_dataframe
 
 
@@ -168,8 +172,6 @@ def interpret_release_date(release_date: str) -> date:
         return None
 
 
-STEAM_STORE_ID = 1
-
 GAME_DATA_TRANSLATION = [
     {'old_name': 'release', 'new_name': 'release_date',
         'translation': interpret_release_date},
@@ -183,10 +185,10 @@ GAME_DATA_TRANSLATION = [
         'translation': lambda x: x},
     {'name': 'app_id',
         'translation': lambda x: x},
-    {'name': 'store_id',
-        'value': STEAM_STORE_ID},
     {'name': 'currency',
         'translation': lambda x: 'GBP' if pd.isna(x) else x},
+    {'old_name': 'image', 'new_name': 'image_url',
+        'translation': lambda x: x}
 ]
 
 
@@ -211,19 +213,25 @@ def get_game_id(count: int) -> list[int]:
     return new_ids
 
 
-def transform_s3_steam_data(conn):
+def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
     """
     Reads data in the S3, discards any data already in the RDS and
     transforms it into the correct format to be uploaded to the RDS
     """
-    raw_df = wr.s3.read_parquet(S3_PATH)
-    existing_data = read_db_table_into_df('game')
+    raw_df = wr.s3.read_parquet(S3_PATH + store_name)
+    raw_df['app_id'] = raw_df['app_id'].astype(int)
+    logging.info("Data about %s games downloaded from S3", len(raw_df))
+
+    existing_data = read_db_table_into_df('game', conn)
     existing_data['game_id'] = pd.to_numeric(
         existing_data['game_id'], errors='coerce').fillna(0).astype(int)
+    logging.info("Data about %s games downloaded from RDS", len(existing_data))
 
     new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])]
+    logging.info("%s new games identified", len(new_data))
 
     game_data = process_data(new_data, GAME_DATA_TRANSLATION)
+    logging.info("Game data transofrmed")
 
     new_ids = get_game_id(len(new_data))
     new_data["game_id"] = new_ids
@@ -231,19 +239,32 @@ def transform_s3_steam_data(conn):
     game_data["game_id"] = new_ids
 
     genres = get_reference_data(
-        new_data, read_db_table_into_df('genre'), 'genre')
+        new_data, read_db_table_into_df('genre', conn), 'genre')
+    logging.info("Genre table generated")
     publishers = get_reference_data(
-        new_data, read_db_table_into_df('publisher'), 'publisher')
+        new_data, read_db_table_into_df('publisher', conn), 'publisher')
+    logging.info("Publisher table generated")
     developers = get_reference_data(
-        new_data, read_db_table_into_df('developer'), 'developer')
+        new_data, read_db_table_into_df('developer', conn), 'developer')
+    logging.info("Developer table generated")
+
+    genre_assignment_df = get_assignment_df(
+        new_data, genres['all'], 'game', 'genre', conn)
+    logging.info("Genre asssignment table generated")
+    publisher_assignment_df = get_assignment_df(
+        new_data, publishers['all'], 'game', 'publisher', conn)
+    logging.info("Publisher asssignment table generated")
+    developer_assignment_df = get_assignment_df(
+        new_data, developers['all'], 'game', 'developer', conn)
+    logging.info("Developer asssignment table generated")
 
     return {
         'genre': genres['new'],
         'publisher': publishers['new'],
         'developer': developers['new'],
-        'genre_assignment': get_assignment_df(new_data, 'game', 'genre', conn),
-        'publisher_assignment': get_assignment_df(new_data, 'game', 'publisher', conn),
-        'developer_assignment': get_assignment_df(new_data, 'game', 'developer', conn),
+        'genre_assignment': genre_assignment_df,
+        'publisher_assignment': publisher_assignment_df,
+        'developer_assignment': developer_assignment_df,
         'game': game_data
     }
 
@@ -276,6 +297,7 @@ def upload_table(conn, df: pd.DataFrame, table: str, col: str) -> None:
         conn.execute(sql, {
             "name": row[col],
         })
+    logging.info("%s table uploaded", table)
 
 
 def upload_games(conn, games_df: pd.DataFrame) -> None:
@@ -283,10 +305,10 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
 
     sql = text("""
         INSERT INTO game (
-          game_id, game_name, app_id, store_id, release_date,
+          game_id, game_name, app_id, store_id, release_date, image_url, 
           game_description, storage_requirements, price, currency
         ) VALUES (
-          :game_id, :game_name, :app_id, :store_id, :release_date,
+          :game_id, :game_name, :app_id, :store_id, :release_date, :image_url, 
           :game_description, :storage_requirements, :price, :currency
         )
         ON CONFLICT (app_id) DO NOTHING
@@ -299,6 +321,7 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
             "app_id": row["app_id"],
             "store_id": row["store_id"],
             "release_date": row["release_date"],
+            "image_url": row["image_url"],
             "game_description": row["description"],
             "storage_requirements": row["storage_requirements"],
             "price": row["price"],
@@ -306,7 +329,10 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
         })
 
 
-def upload_assignments(conn, df: pd.DataFrame, table: str, left_foreign_key: str, right_foreign_key: str) -> None:
+def upload_assignments(conn, df: pd.DataFrame,
+                       table: str,
+                       left_foreign_key: str,
+                       right_foreign_key: str) -> None:
     """Generic function to help with genre, publisher and developer assignment"""
     sql = text(f"""
         INSERT INTO {table} ({left_foreign_key}, {right_foreign_key})
@@ -317,6 +343,7 @@ def upload_assignments(conn, df: pd.DataFrame, table: str, left_foreign_key: str
     for _, row in df.iterrows():
         conn.execute(
             sql, {"l": int(row[left_foreign_key]), "r": int(row[right_foreign_key])})
+    logging.info("%s table uploaded", table)
 
 
 def get_existing_game_ids(conn) -> set[int]:
@@ -363,6 +390,7 @@ def load_data_into_database(conn, games_df: pd.DataFrame,
     upload_table(conn, genre_df, "genre", "genre_name")
 
     upload_games(conn, games_df)
+    logging.info("game table uploaded")
 
     existing_game_ids = get_existing_game_ids(conn)
 
@@ -389,17 +417,16 @@ def main():
     engine = get_engine()
     with engine.connect() as conn:
         with conn.begin():
-            data = transform_s3_steam_data(conn)
-            games_df = data["game"]
-            publisher_df = data["publisher"]
-            developer_df = data["developer"]
-            genre_df = data["genre"]
-            genre_assignment_df = data["genre_assignment"]
-            developer_assignment_df = data["developer_assignment"]
-            publisher_assignment_df = data["publisher_assignment"]
-
-            load_data_into_database(conn, games_df, publisher_df, developer_df, genre_df,
-                                    genre_assignment_df, developer_assignment_df, publisher_assignment_df)
+            for store_id, store_name in enumerate(['steam', 'epic'], 1):
+                data = transform_s3_steam_data(conn, store_name)
+                data["game"]['store_id'] = store_id
+                load_data_into_database(
+                    conn, data["game"], data["publisher"],
+                    data["developer"], data["genre"],
+                    data["genre_assignment"],
+                    data["developer_assignment"],
+                    data["publisher_assignment"]
+                )
 
 
 if __name__ == "__main__":
