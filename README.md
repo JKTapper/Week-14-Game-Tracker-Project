@@ -14,12 +14,14 @@ on their favourite genres.
 
 ## Technologies used
 1. ECR - Docker images
-2. EventBridge Scheduler and Lambda to run pipelines
+2. Lambda to run pipelines
 3. ECS/Fargate to host the dashboard and subscriber form
 4. S3 for raw data storage - time-partitioned
 5. RDS for storage of latest clean data
 6. Streamlit dashboard for visualisations
-7. EventBridge Step Functions and SES to send reports and notifications 
+7. SES for emailing reports and notifications
+8. EventBridge Step Functions for carrying out SES actions
+9. EventBridge Scheduler for scheduling the pipelines and reports
 
 ## File structures
 - .github
