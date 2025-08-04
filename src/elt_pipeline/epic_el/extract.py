@@ -28,7 +28,7 @@ def get_existing_games(path: str, session) -> list[str]:
             'app_id'], boto3_session=session)
         return df['app_id'].astype(str).tolist()
     except Exception as e:  # pylint: disable=broad-exception-caught
-        logging.error(f"No existing data found in S3: {e}")
+        logging.error("No existing data found in S3: %s", e)
         return []
 
 
@@ -42,7 +42,7 @@ def get_epic_game_summaries() -> list:
             product = api.get_product(slug)
             if not product:
                 logging.warning(
-                    f"Skipping game '{slug}' because product is None.")
+                    "Skipping game %s because product is None.", slug)
                 continue
 
             for page in product.get('pages', []):
@@ -56,7 +56,7 @@ def get_epic_game_summaries() -> list:
                         })
 
         except Exception as e:  # pylint: disable=broad-exception-caught
-            logging.warning(f"Error getting data for {slug}: {e}")
+            logging.warning("Error getting data for %s: %s", slug, e)
             continue
 
     return summaries
