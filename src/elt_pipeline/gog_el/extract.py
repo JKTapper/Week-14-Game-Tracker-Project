@@ -47,6 +47,8 @@ def get_html(url):
 
 
 def extract_game_details(game_page: BeautifulSoup) -> dict[str:str]:
+    """Finds and reads the listed details
+    in the bottom right of a game's page"""
     game_details_list = game_page.find(
         'div', class_="details")
     game_details_rows = game_details_list.find_all(
@@ -120,8 +122,10 @@ def get_gog_game_details(url: str) -> dict[str]:
     price = int(price.replace('.', ''))
 
     description = re.search(
-        r'<p>(\n\w[\s\S]+?)<\/p>', str(description)) or re.search(
-        r'<div class="description">([\s\S]+?)<br\/>', str(description))
+        r'<p>(\n\w[\s\S]+?)<\/p>',
+        str(description)) or re.search(
+        r'<div class="description">([\s\S]+?)<br\/>',
+        str(description))
     description = description.group()
     description = re.sub(r'<.*?>', '', description).replace('\n', '')
 

@@ -2,11 +2,11 @@
 """Script to take transformed data and stores into our RDS Postgres Database"""
 import os
 import logging
+from datetime import datetime, date
+import re
 from dotenv import load_dotenv
 import pandas as pd
 from sqlalchemy import create_engine, text, Engine
-from datetime import datetime, date
-import re
 import awswrangler as wr
 from psycopg2 import connect
 from psycopg2.extensions import connection
@@ -218,23 +218,36 @@ def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
     Reads data in the S3, discards any data already in the RDS and
     transforms it into the correct format to be uploaded to the RDS
     """
-    raw_df = wr.s3.read_parquet(S3_PATH + store_name)
+    try:
+        raw_df = wr.s3.read_parquet(S3_PATH + store_name)
+    except Exception as e:
+        logging.error('Error reading S3 path %s: %s', S3_PATH + store_name, e)
+        return {
+            'genre': pd.DataFrame(),
+            'publisher': pd.DataFrame(),
+            'developer': pd.DataFrame(),
+            'genre_assignment': pd.DataFrame(),
+            'publisher_assignment': pd.DataFrame(),
+            'developer_assignment': pd.DataFrame(),
+            'game': pd.DataFrame()
+        }
     raw_df['app_id'] = raw_df['app_id'].astype(int)
-    logging.info("Data about %s games downloaded from S3", len(raw_df))
+    logging.info("Data about %s %s games downloaded from S3",
+                 len(raw_df), store_name)
 
     existing_data = read_db_table_into_df('game', conn)
     existing_data['game_id'] = pd.to_numeric(
         existing_data['game_id'], errors='coerce').fillna(0).astype(int)
     logging.info("Data about %s games downloaded from RDS", len(existing_data))
 
-    new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])]
+    new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])].copy()
     logging.info("%s new games identified", len(new_data))
 
     game_data = process_data(new_data, GAME_DATA_TRANSLATION)
-    logging.info("Game data transofrmed")
+    logging.info("Game data transformed")
 
     new_ids = get_game_id(len(new_data))
-    new_data.loc["game_id"] = new_ids
+    new_data.loc[:, "game_id"] = new_ids
 
     game_data.loc["game_id"] = new_ids
 
@@ -249,13 +262,13 @@ def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
     logging.info("Developer table generated")
 
     genre_assignment_df = get_assignment_df(
-        new_data, genres['all'], 'game', 'genre', conn)
+        new_data, 'game', 'genre', conn)
     logging.info("Genre asssignment table generated")
     publisher_assignment_df = get_assignment_df(
-        new_data, publishers['all'], 'game', 'publisher', conn)
+        new_data, 'game', 'publisher', conn)
     logging.info("Publisher asssignment table generated")
     developer_assignment_df = get_assignment_df(
-        new_data, developers['all'], 'game', 'developer', conn)
+        new_data, 'game', 'developer', conn)
     logging.info("Developer asssignment table generated")
 
     return {
@@ -419,6 +432,10 @@ def main():
         with conn.begin():
             for store_id, store_name in enumerate(['steam', 'epic'], 1):
                 data = transform_s3_steam_data(conn, store_name)
+                if data['game'].empty:
+                    logging.warning(
+                        "No new game data for %s, skipping upload.", store_name)
+                    continue
                 data["game"]['store_id'] = store_id
                 load_data_into_database(
                     conn, data["game"], data["publisher"],
