@@ -1,5 +1,4 @@
 """Script to scrape today's releases from the epic games store"""
-import json
 import logging
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
@@ -7,7 +6,7 @@ import awswrangler as wr
 import boto3
 from epicstore_api import EpicGamesStoreAPI, OfferData
 
-S3_PATH = "s3://c18-game-tracker-s3/input/"
+S3_PATH = "s3://c18-game-tracker-s3/input/epic/"
 api = EpicGamesStoreAPI()
 
 
@@ -144,7 +143,8 @@ def fetch_game_with_release_check(item, product_map, release_cutoff) -> dict | N
             if release_dt.date() == release_cutoff:
                 return {**item, **details}
     except Exception as e:  # pylint: disable=broad-exception-caught
-        logging.warning(f"Error parsing release date for {app_id}: {e}")
+        logging.warning(
+            f"Error parsing release date for {app_id}: {e}. Release string: {release_str}")
 
     return None
 
@@ -158,14 +158,12 @@ def main() -> list[dict]:
     new_games = [
         game for game in scraped_games if str(game.get("app_id")) not in existing_games
     ]
-    print(f"Scraped {len(new_games)} new game(s) not already in S3.")
+
+    logging.info(f"Scraped {len(new_games)} new game(s) not already in S3.")
 
     release_cutoff = datetime.today().date()
 
-    # release_cutoff = datetime.strptime("20/03/2024", "%d/%m/%Y").date()
-
     full_game_data = iterate_through_scraped_games(new_games, release_cutoff)
-    print(json.dumps(full_game_data, indent=2))
 
     return full_game_data
 
