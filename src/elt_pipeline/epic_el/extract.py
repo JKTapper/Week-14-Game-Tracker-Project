@@ -168,5 +168,10 @@ def main() -> list[dict]:
     return full_game_data
 
 
+def handler():
+    """Lambda Handler function"""
+    main()
+
+
 if __name__ == "__main__":
     main()
