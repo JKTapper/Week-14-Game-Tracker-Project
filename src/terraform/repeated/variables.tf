@@ -4,6 +4,9 @@ variable "lambda_image_uri" {
 variable "lambda_image_uri_tl" {
   description = "ECR image tl URI"
 }
+variable "lambda_image_uri_notification" {
+  description = "ECR image noti URI"
+}
 
 variable "ecr_repo_name" {
   default     = "c18-game-tracker-ecr"
