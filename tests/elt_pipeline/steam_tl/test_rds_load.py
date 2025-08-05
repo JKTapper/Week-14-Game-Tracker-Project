@@ -11,12 +11,13 @@ games_df = pd.DataFrame({
     "game_id": [1],
     "game_name": ["Game A"],
     "app_id": [123],
-    "store_id": 1,
-    'storage_requirements': 'idk',
+    "store_id": [1],
+    'storage_requirements': ['idk'],
     "release_date": ["2023-01-01"],
+    "image_url": ['www.image'],
     "description": ["Description A"],
     "price": [1999],
-    "currency": "GDP",
+    "currency": ["GDP"],
 })
 
 publisher_df = pd.DataFrame({
