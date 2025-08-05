@@ -249,6 +249,34 @@ resource "aws_cloudwatch_log_group" "form_app_logs" {
   retention_in_days = 7
 }
 
+resource "aws_iam_policy" "ses_verify_email_policy" {
+  name        = "SESVerifyEmailPolicy"
+  description = "Allow ECS tasks to verify emails using SES"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ses:VerifyEmailIdentity",
+          "ses:GetIdentityVerificationAttributes"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+data "aws_iam_role" "ecs_task_execution" {
+  name = "ecsTaskExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "attach_ses_policy_to_external_role" {
+  role       = data.aws_iam_role.ecs_task_execution.name
+  policy_arn = aws_iam_policy.ses_verify_email_policy.arn
+}
+
+
+
 # ECS Task Definition for Flask Form App
 resource "aws_ecs_task_definition" "form_app_task" {
   family                   = "c18-game-tracker-form-app"

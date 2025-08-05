@@ -1,7 +1,7 @@
 #pylint: skip-file
 import pytest
 import pandas as pd
-from form import app
+from subscriber.form.form import app
 
 @pytest.fixture
 def client():
