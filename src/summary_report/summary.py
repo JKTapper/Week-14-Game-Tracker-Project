@@ -1,58 +1,58 @@
-import os
-from dotenv import load_dotenv
-import psycopg2
-import pandas as pd
-from reportlab.pdfgen import canvas
-from pathlib import Path
-from pypdf import PdfWriter
-from visuals import count_releases_by_day, most_common_genres
+from datetime import datetime
+from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
+    find_mean_price, find_new_release_count, find_free_count
 
 
-
-def connect_to_rds():
+def create_summary_html() -> str:
     """
-    Connection to aws rds
+    Gathers metrics and charts and creates a HTML weekly report summary.
+
+    Returns:
+        A string containing the HTML for the report.
     """
-    load_dotenv()
-    print(os.getenv("DB_HOST"), os.getenv("DB_USERNAME"),
-          os.getenv("DB_PASSWORD"), os.getenv("DB_NAME"))
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        port=5432,
-        user=os.getenv("DB_USERNAME"),
-        password=os.getenv("DB_PASSWORD"),
-        dbname="postgres"
+    mean_price = find_mean_price()
+    releases_week = find_new_release_count(7)
+    free_games_count = find_free_count()
+    report_date = datetime.now().strftime("%d-%m-%Y")
 
-    )
+    releases_chart_obj = count_releases_by_day()
+    genres_chart_obj = most_common_genres()
+    price_hist_obj = price_distribution_histogram()
 
+    html_content = f"""
+    <html>
+        <head>
+            <title>New Games Tracker Report</title>
+            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@5.20.1"></script>
+            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+        </head> 
+        <body style="font-family: sans-serif;">
+            <h1>New Games Tracker Weekly Report</h1>
+            <p><i>Date: {report_date}</i></p>
 
-def query_rds(conn, query):
-    return pd.read_sql(query, conn)
+            <h2>This Week's Key Stats</h2>
+            <ul>
+                <li><b>New Releases:</b> {releases_week}</li>
+                <li><b>Average Price (Paid Games):</b> {mean_price}</li>
+                <li><b>Total Free Games:</b> {free_games_count}</li>
+            </ul>
 
-CONTENTS = [
-    "Contents:",
-    "1. Contents",
-    "2. Bar chart of release vs genre"
-]
+            <h2>Recent Release Activity</h2>
+            <div id="releases-chart"></div>
+            
+            <h2>Most Common Genres</h2>
+            <div id="genres-chart"></div>
 
-if __name__ == "__main__":
-    current_directory = Path.cwd()
-    for path in current_directory.glob("*.pdf"):
-        os.remove(path)
-    connection = connect_to_rds()
-    data = query_rds(connection, "select * from game;")
-    summary = canvas.Canvas("0.pdf")
-    for line_numer, line in enumerate(CONTENTS):
-        summary.drawString(100, 500-15*line_numer, line)
-    summary.showPage()
-    summary.save()
-    chart = most_common_genres()
-    chart.show()
-    chart.save('1.pdf')
-    print(data)
-    pdf_merger = PdfWriter()
-    for path in current_directory.glob("*.pdf"):
-        print(path, type(path))
-        pdf_merger.append(path)
-    pdf_merger.write("Summary.pdf")
-    pdf_merger.close()
+            <h2>Price Distribution of Paid Games</h2>
+            <div id="price-distribution-chart"></div>
+
+            <script>
+                vegaEmbed("#releases-chart", {releases_chart_obj.to_json()});
+                vegaEmbed("#genres-chart", {genres_chart_obj.to_json()});
+                vegaEmbed("#price-distribution-chart", {price_hist_obj.to_json()});
+            </script>
+        </body>
+    </html>
+    """
+    return html_content
