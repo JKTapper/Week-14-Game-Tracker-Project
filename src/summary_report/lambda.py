@@ -3,7 +3,7 @@ from summary import create_summary_html
 
 def handler(event, context):
     """
-    Handles Lambda event to generate and return a weekly game report.
+    Handles Lambda event to generate and return a weekly game report for subscribers.
     """
     html_content = create_summary_html()
     if html_content:
