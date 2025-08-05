@@ -4,6 +4,7 @@ Takes json list of newly scraped games, requests data from API
 and adds supplementary data to the json list.'''
 import logging
 import re
+from datetime import datetime
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests
@@ -47,12 +48,16 @@ def get_html(url):
 
 def extract_game_details(game_page: BeautifulSoup) -> dict[str:str]:
     game_details_list = game_page.find(
-        'div', class_="details table table--without-border ng-scope")
-    game_details_rows = game_details_list.find_all('div', recursive=False)
+        'div', class_="details")
+    game_details_rows = game_details_list.find_all(
+        'div', recursive=False, class_='table__row')
     details_dict = {}
-    for row in game_details_rows:
-        label = row.find_next_sibling().get_text()
-        content = row.find_next_sibling().get_text()
+    for row in game_details_rows[:7]:
+        elements = [row.find(class_='details__category'), row.find(
+            class_='details__content')]
+        row = row.find_all()[:2]
+        label, content = [re.sub(r'\s+', ' ', element.get_text()).strip()
+                          for element in elements][:2]
         details_dict[label] = content
     return details_dict
 
@@ -61,21 +66,28 @@ def parse_games_bs(html):
     """
     Extracts the games from the gog website
     """
+    total = 0
     games = []
     recent_releases_soup = BeautifulSoup(html, "html.parser")
-    for site_game in recent_releases_soup.find_all('a'):
-
+    # only first 12 games have their images load correctly
+    for game_tile in recent_releases_soup.find_all('product-tile')[:12]:
+        total += 1
+        site_game = game_tile.find('a')
         link = site_game.get('href')
         app_id = site_game.get('data-product-id')
-        if link and app_id:
-            image_string = site_game.find('source').get('srcset')
-            image_url = re.search(r'?(https.+2x.webp)', image_string).group(1)
+        image_block = site_game.find('picture')
+        if link and app_id and image_block:
+            image_string = image_block.find('source').get('srcset')
+            image_url = re.search(
+                r'https[^ ,]+?2x\.webp', image_string).group()
             game = {
                 'url': link,
                 'app_id': app_id,
                 'image': image_url
             }
             games.append(game)
+        else:
+            logging.warning("Game %s not stored", app_id)
     return games
 
 
@@ -83,41 +95,48 @@ def get_gog_game_details(url: str) -> dict[str]:
     '''Takes the gog store url for a game
     and scrapes taht page for useful data
     Returns dict of useful data'''
-    try:
-        this_game_soup = BeautifulSoup(get_html(url), "html.parser")
+    this_game_soup = BeautifulSoup(get_html(url), "html.parser")
 
-        title = this_game_soup.find(
-            'h1', class_='productcard-basics__title').get_text()
-        price = this_game_soup.find(
-            'span', class_='product-actions-price__final-amount _price ng-binding').get_text()
-        description = this_game_soup.find('div', class_='description')
+    title = this_game_soup.find(
+        'h1', class_='productcard-basics__title').get_text().strip()
+    price = this_game_soup.find(
+        'span', class_='product-actions-price__final-amount').get_text()
+    description = this_game_soup.find(
+        'div', class_='description')
 
-        game_details = extract_game_details(this_game_soup)
-        makers = game_details.get('Company:')
-        requirements = game_details.get('Size:')
-        release = game_details.get('Release date:')
+    game_details = extract_game_details(this_game_soup)
+    makers = game_details.get('Company:')
+    requirements = game_details.get('Size:')
+    release = game_details.get('Release date:')
 
-        if ' / ' in makers:
-            developer, publisher = makers.split(' / ')
-        else:
-            developer, publisher = makers, makers
+    release = re.search(r'\d\d\d\d-\d\d-\d\d', release).group()
+    release = datetime.strptime(release, '%Y-%m-%d').date()
 
-        price = int(price.replace('.', ''))
+    if ' / ' in makers:
+        developer, publisher = makers.split(' / ')
+    else:
+        developer, publisher = makers, makers
 
-        return {
-            'publishers': [publisher],
-            'developers': [developer],
-            'description': description,
-            'requirements': requirements,
-            'is_free': price == 0,
-            'price': price,
-            'currency': 'GBP',
-            'genres': game_details['Genre:'].split(' - '),
-            'title': title,
-            'release': release
-        }
-    except:
-        return {}
+    price = int(price.replace('.', ''))
+
+    description = re.search(
+        r'<p>(\n\w[\s\S]+?)<\/p>', str(description)) or re.search(
+        r'<div class="description">([\s\S]+?)<br\/>', str(description))
+    description = description.group()
+    description = re.sub(r'<.*?>', '', description).replace('\n', '')
+
+    return {
+        'publishers': [publisher],
+        'developers': [developer],
+        'description': description,
+        'requirements': requirements,
+        'is_free': price == 0,
+        'price': price,
+        'currency': 'GBP',
+        'genres': game_details['Genre:'].split(' - '),
+        'title': title,
+        'release': release
+    }
 
 
 def iterate_through_scraped_games(json_data: list[dict[str]]):
@@ -126,10 +145,9 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
     '''
     games_full_data = []
     for item in json_data:
-        link = item['link']
+        link = item['url']
         if link:
             details = get_gog_game_details(link)
-            # Merge original data with extra info
             full_data = item | details
             games_full_data.append(full_data)
     return games_full_data
@@ -145,4 +163,3 @@ if __name__ == "__main__":
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
 
     full_game_data = iterate_through_scraped_games(new_games)
-    print(full_game_data)
