@@ -17,6 +17,10 @@ from sqlalchemy.engine import Engine
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+SOURCE_EMAIL = "gametrackerc18@gmail.com"
+
+
 def connect_to_rds()-> Engine:
     """
     Connect to AWS RDS using environment variables.
@@ -104,20 +108,23 @@ def handler(event, context):
     Lambda handler which sends email to all subscribers
     """
     client = boto3.client('ses', region_name='eu-west-2')
-    source_email = "gametrackerc18@gmail.com"
 
     data = get_sub_notifications()
     emails = data['subscriber_email'].unique()
 
     for email in emails:
         email_df = data[data['subscriber_email'] == email]
+        
+        # Group by genre so that result is in form {genre1:[game1, game2, game3]}
         grouped = email_df.groupby('genre_name')['game_name'].apply(list).to_dict()
 
+        # Get list with the most elements to determine size of df/table 
         max_len = max(len(games) for games in grouped.values())
         formatted_data = {
             genre: games + [''] * (max_len - len(games))
             for genre, games in grouped.items()
         }
+        # df now in form (col=genres, row=games)
         pivot_df = pd.DataFrame(formatted_data)
 
         html_content = make_html(pivot_df)
@@ -136,7 +143,7 @@ def handler(event, context):
                         'Data': '🆕 New Games Added - Game Tracker Update',
                     },
                 },
-                Source=source_email
+                Source=SOURCE_EMAIL
             )
 
             logger.info(f"Email notification sent to {email}")
