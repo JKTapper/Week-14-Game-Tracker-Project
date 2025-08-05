@@ -4,4 +4,4 @@
 
 aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 129033205317.dkr.ecr.eu-west-2.amazonaws.com
 
-docker buildx build --platform linux/amd64 --provenance=false -f src/elt_pipeline/steam_el/Dockerfile -t 129033205317.dkr.ecr.eu-west-2.amazonaws.com/c18-game-tracker-ecr:epic_el --push .
+docker buildx build --no-cache --platform linux/amd64 --provenance=false -f src/elt_pipeline/epic_el/Dockerfile -t 129033205317.dkr.ecr.eu-west-2.amazonaws.com/c18-game-tracker-ecr:epic_el --push .

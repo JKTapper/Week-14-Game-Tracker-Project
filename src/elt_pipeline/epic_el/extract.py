@@ -6,6 +6,9 @@ import awswrangler as wr
 import boto3
 from epicstore_api import EpicGamesStoreAPI, OfferData
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 S3_PATH = "s3://c18-game-tracker-s3/input/epic/"
 api = EpicGamesStoreAPI()
 
@@ -89,7 +92,7 @@ def get_epic_game_details(offer_id: str, namespace: str = '') -> dict:
             'currency': catalog.get('price', {}).get('totalPrice', {}).get('currencyCode', 'USD'),
             'genres': [tag.get('name') for tag in catalog.get('tags', []) if tag.get('name')],
             'image': catalog.get('keyImages', [{}])[0].get('url', ''),
-            'release': release_date
+            'release': release_date or ''
         }
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.warning(f"Error fetching details for {offer_id}: {e}")
