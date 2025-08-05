@@ -26,7 +26,7 @@ def get_session() -> boto3.Session:
 
 def get_existing_games(path: str, session) -> list[str]:
     '''Reads the entire dataset from S3 (partitioned by year/month/day).
-    Returns a DataFrame containing existing games' app IDs'''
+    Returns a list containing existing games' app IDs'''
     try:
         df = wr.s3.read_parquet(path, dataset=True, columns=[
             'app_id'], boto3_session=session)
@@ -36,7 +36,7 @@ def get_existing_games(path: str, session) -> list[str]:
         return []
 
 
-def get_html(url):
+def get_html(url: str) -> str:
     """
     Gets the html content of the webpage at a given url
     """
@@ -64,7 +64,7 @@ def extract_game_details(game_page: BeautifulSoup) -> dict[str:str]:
     return details_dict
 
 
-def parse_games_bs(html):
+def parse_games_bs(html: str) -> list[dict[str]]:
     """
     Extracts the games from the gog website
     """
@@ -94,9 +94,10 @@ def parse_games_bs(html):
 
 
 def get_gog_game_details(url: str) -> dict[str]:
-    '''Takes the gog store url for a game
-    and scrapes taht page for useful data
-    Returns dict of useful data'''
+    """
+    Takes the gog store url for a game
+    and scrapes that page for useful data
+    """
     this_game_soup = BeautifulSoup(get_html(url), "html.parser")
 
     title = this_game_soup.find(
