@@ -15,8 +15,8 @@ from sqlalchemy.engine import Engine
 
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 SOURCE_EMAIL = "gametrackerc18@gmail.com"
 
