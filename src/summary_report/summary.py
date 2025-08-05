@@ -1,3 +1,5 @@
+"""This module assembles key game metrics and charts into a HTML report using weekly data."""
+
 from datetime import datetime
 from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
     find_mean_price, find_new_release_count, find_free_count

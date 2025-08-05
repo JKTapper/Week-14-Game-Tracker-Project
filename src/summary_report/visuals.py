@@ -33,7 +33,7 @@ def find_new_release_count(day_range):
     Finds the number of games released in the last 7 days
 
     Parameters:
-        day_range: A number indicating how many days worth of releases should be counted (Default is 7)
+        day_range: A number indicating how many days worth of releases should be counted
 
     Returns:
         A number representing the total number of games released in this time day_range
