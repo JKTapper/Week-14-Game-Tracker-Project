@@ -319,6 +319,7 @@ resource "aws_ecs_service" "form_app_service" {
   depends_on = [aws_ecs_task_definition.form_app_task]
 }
 
+# Daily emails lambda
 resource "aws_lambda_function" "daily_email" {
   function_name = "c18-game-tracker-noti-sender"
   # re-used role
@@ -359,4 +360,28 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   function_name = aws_lambda_function.daily_email.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.daily_trigger.arn
+}
+
+# Adding SES permissions
+resource "aws_iam_policy" "ses_send_email_policy" {
+  name        = "game-tracker-ses-send-email"
+  description = "Allow Lambda to send email via SES"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = [
+          "ses:SendEmail",
+          "ses:SendRawEmail"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_ses_attachment" {
+  role       = aws_iam_role.lambda_exec_role_game_tracker_el.name
+  policy_arn = aws_iam_policy.ses_send_email_policy.arn
 }
