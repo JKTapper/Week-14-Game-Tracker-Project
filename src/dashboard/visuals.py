@@ -151,18 +151,23 @@ def best_weekday():
     """Creates a bar chart showing the number of games released on each weekday"""
     query = """
             SELECT
-            TO_CHAR(release_date, 'Day') AS day_of_week
-            FROM game
+            release_date FROM game
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
+
+    game_df['day_of_week'] = pd.to_datetime(
+        game_df['release_date']).dt.day_name()
+
+    day_order = ['Monday', 'Tuesday', 'Wednesday',
+                 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
     day_release_counts = game_df.groupby(
         game_df['day_of_week']
     ).size().reset_index(name='count')
 
     bar_chart = alt.Chart(day_release_counts).mark_bar().encode(
-        x=alt.X('day_of_week:O', title='Day of the Week', sort='-y'),
+        x=alt.X('day_of_week:O', title='Day of the Week', sort=day_order),
         y=alt.Y('count:Q', title='Number of Releases'),
         color=alt.Color('count:N', scale=alt.Scale(
             scheme='magma', reverse=True), legend=None),
