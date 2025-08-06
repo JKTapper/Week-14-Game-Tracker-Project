@@ -42,6 +42,7 @@ def find_new_release_count(day_range):
             SELECT count(game_name) as game_count
             FROM game
             WHERE release_date >= NOW() - INTERVAL '{day_range} days'
+            AND release_date <= CURRENT_DATE
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)
@@ -72,7 +73,8 @@ def count_releases_by_day():
             SELECT
             release_date
             FROM game
-            WHERE EXTRACT(YEAR FROM release_date) > 2000
+            WHERE EXTRACT(YEAR FROM release_date) >= 2025
+            AND release_date <= CURRENT_DATE
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
@@ -143,3 +145,62 @@ def price_distribution_histogram():
     ).interactive()
 
     st.altair_chart(hist_chart, use_container_width=True)
+
+
+def best_weekday():
+    """Creates a bar chart showing the number of games released on each weekday"""
+    query = """
+            SELECT
+            release_date FROM game
+            """
+    with st.spinner("Fetching game data..."):
+        game_df = fetch_game_data(query)
+
+    game_df['day_of_week'] = pd.to_datetime(
+        game_df['release_date']).dt.day_name()
+
+    day_order = ['Monday', 'Tuesday', 'Wednesday',
+                 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    day_release_counts = game_df.groupby(
+        game_df['day_of_week']
+    ).size().reset_index(name='count')
+
+    bar_chart = alt.Chart(day_release_counts).mark_bar().encode(
+        x=alt.X('day_of_week:O', title='Day of the Week', sort=day_order),
+        y=alt.Y('count:Q', title='Number of Releases'),
+        color=alt.Color('count:N', scale=alt.Scale(
+            scheme='magma', reverse=True), legend=None),
+        tooltip=['day_of_week', 'count']
+    ).properties(
+        width=600,
+        height=300
+    ).interactive()
+
+    st.altair_chart(bar_chart, use_container_width=True)
+
+
+def releases_by_store():
+    '''Creates a pie chart showing the number of games released by each store recently'''
+    query = """
+            SELECT game.store_id, store.store_name
+            FROM game
+            JOIN store USING (store_id)
+            """
+    with st.spinner("Fetching game data..."):
+        game_df = fetch_game_data(query)
+
+    store_count = game_df.groupby(
+        game_df['store_name']
+    ).size().reset_index(name='count')
+
+    pie_chart = alt.Chart(store_count).mark_arc().encode(
+        theta="count",
+        color="store_name"
+    )
+    st.altair_chart(pie_chart, use_container_width=True)
+
+
+# average price by platform
+
+# genre combinations
