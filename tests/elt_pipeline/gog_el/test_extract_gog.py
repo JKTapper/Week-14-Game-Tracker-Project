@@ -1,6 +1,6 @@
 # pylint: skip-file
 """
-This module tests functions used during the extraction of steam data via scraping and the api
+This module tests functions used during the extraction of gog data via scraping and the api
 """
 
 from src.elt_pipeline.gog_el.extract import get_gog_game_details, parse_games_bs, iterate_through_scraped_games

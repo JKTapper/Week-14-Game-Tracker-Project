@@ -109,7 +109,6 @@ def get_gog_game_details(html: str) -> dict[str]:
         'div', class_='description')
 
     game_details = extract_game_details(this_game_soup)
-    print(game_details)
     makers = game_details.get('Company:')
     requirements = game_details.get('Size:')
     release = game_details.get('Release date:')
