@@ -11,6 +11,15 @@ variable "lambda_image_el_epic_uri" {
   description = "ECR image el epic URI"
 }
 
+variable "lambda_image_el_gog_uri" {
+  description = "ECR image el gog URI"
+}
+
+variable "lambda_image_uri_summary" {
+  description = "ECR image summary"
+}
+
+
 variable "ecr_repo_name" {
   default     = "c18-game-tracker-ecr"
   description = "ecr repo name"

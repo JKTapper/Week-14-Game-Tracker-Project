@@ -134,6 +134,45 @@ resource "aws_cloudwatch_event_target" "lambda_target_el_epic" {
 }
 
 
+
+# el gog lambda
+resource "aws_lambda_function" "el_gog_lambda" {
+  function_name = "c18-game-tracker-el-gog-lambda"
+  package_type  = "Image"
+  image_uri     = var.lambda_image_el_gog_uri
+  role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
+  timeout       = 900
+  memory_size   = 512
+
+  environment {
+    variables = {
+      LOG_LEVEL = "INFO"
+    }
+  }
+}
+
+
+# Permission for EventBridge to invoke Lambda
+resource "aws_lambda_permission" "allow_event_el_gog" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.el_gog_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.daily_midnight.arn
+}
+
+# EventBridge Target
+resource "aws_cloudwatch_event_target" "lambda_target_gog_epic" {
+  rule      = aws_cloudwatch_event_rule.daily_midnight.name
+  target_id = "lambda"
+  arn       = aws_lambda_function.el_gog_lambda.arn
+}
+
+
+
+
+
+
 # tl lambda
 resource "aws_lambda_function" "docker_lambda_tl" {
   function_name = "c18-game-tracker-tl-lambda"
@@ -457,4 +496,51 @@ resource "aws_iam_policy" "ses_send_email_policy" {
 resource "aws_iam_role_policy_attachment" "lambda_ses_attachment" {
   role       = aws_iam_role.lambda_exec_role_game_tracker_el.name
   policy_arn = aws_iam_policy.ses_send_email_policy.arn
+}
+
+
+
+
+# Daily emails lambda
+resource "aws_lambda_function" "weekly_summary" {
+  function_name = "c18-game-tracker-weekly-summary-lambda"
+  # re-used role
+
+  role = aws_iam_role.lambda_exec_role_game_tracker_el.arn
+
+  package_type = "Image"
+  image_uri    = var.lambda_image_uri_summary
+
+  timeout     = 60
+  memory_size = 256
+
+  environment {
+    variables = {
+      DB_HOST     = var.DB_HOST
+      DB_PORT     = var.DB_PORT
+      DB_USERNAME = var.DB_USER
+      DB_PASSWORD = var.DB_PASSWORD
+      DB_NAME     = var.DB_NAME
+      DB_SCHEMA   = var.DB_SCHEMA
+    }
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "weekly_trigger" {
+  name                = "c18-game-tracker-weekly-schedule"
+  schedule_expression = "cron(0 23 * * ? 7)"
+}
+
+resource "aws_cloudwatch_event_target" "lambda_target_weekly_summary" {
+  rule      = aws_cloudwatch_event_rule.weekly_trigger.name
+  target_id = "lambda-weekly-summary"
+  arn       = aws_lambda_function.weekly_summary.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_summary" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.weekly_summary.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.weekly_trigger.arn
 }
