@@ -188,6 +188,8 @@ GAME_DATA_TRANSLATION = [
     {'name': 'currency',
         'translation': lambda x: 'GBP' if pd.isna(x) else x},
     {'old_name': 'image', 'new_name': 'image_url',
+        'translation': lambda x: x},
+    {'old_name': 'url', 'new_name': 'game_url',
         'translation': lambda x: x}
 ]
 
@@ -229,7 +231,7 @@ def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
             'genre_assignment': pd.DataFrame(),
             'publisher_assignment': pd.DataFrame(),
             'developer_assignment': pd.DataFrame(),
-            'game': pd.DataFrame()
+            'game': pd.DataFrame(),
         }
     raw_df['app_id'] = raw_df['app_id'].astype(int)
     logging.info("Data about %s %s games downloaded from S3",
@@ -319,10 +321,10 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
     sql = text("""
         INSERT INTO game (
           game_id, game_name, app_id, store_id, release_date, image_url, 
-          game_description, storage_requirements, price, currency
+          game_description, storage_requirements, price, currency, game_url
         ) VALUES (
           :game_id, :game_name, :app_id, :store_id, :release_date, :image_url, 
-          :game_description, :storage_requirements, :price, :currency
+          :game_description, :storage_requirements, :price, :currency, :game_url
         )
         ON CONFLICT (app_id) DO NOTHING
     """)
@@ -339,6 +341,7 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
             "storage_requirements": row["storage_requirements"],
             "price": row["price"],
             "currency": row["currency"],
+            "game_url": row["game_url"]
         })
 
 
