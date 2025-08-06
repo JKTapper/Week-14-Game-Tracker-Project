@@ -113,7 +113,11 @@ def get_gog_game_details(html: str) -> dict[str]:
     requirements = game_details.get('Size:')
     release = game_details.get('Release date:')
 
-    release = datetime.strptime(release, '%B %d, %Y').date()
+    try:
+        release = re.search(r'\d\d\d\d-\d\d-\d\d', release).group()
+        release = datetime.strptime(release, '%Y-%m-%d').date()
+    except:
+        release = datetime.strptime(release, '%B %d, %Y').date()
 
     if ' / ' in makers:
         developer, publisher = makers.split(' / ')
