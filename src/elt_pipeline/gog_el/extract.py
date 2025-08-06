@@ -94,12 +94,12 @@ def parse_games_bs(html: str) -> list[dict[str]]:
     return games
 
 
-def get_gog_game_details(url: str) -> dict[str]:
+def get_gog_game_details(html: str) -> dict[str]:
     """
     Takes the gog store url for a game
     and scrapes that page for useful data
     """
-    this_game_soup = BeautifulSoup(get_html(url), "html.parser")
+    this_game_soup = BeautifulSoup(html, "html.parser")
 
     title = this_game_soup.find(
         'h1', class_='productcard-basics__title').get_text().strip()
@@ -109,12 +109,12 @@ def get_gog_game_details(url: str) -> dict[str]:
         'div', class_='description')
 
     game_details = extract_game_details(this_game_soup)
+    print(game_details)
     makers = game_details.get('Company:')
     requirements = game_details.get('Size:')
     release = game_details.get('Release date:')
 
-    release = re.search(r'\d\d\d\d-\d\d-\d\d', release).group()
-    release = datetime.strptime(release, '%Y-%m-%d').date()
+    release = datetime.strptime(release, '%B %d, %Y').date()
 
     if ' / ' in makers:
         developer, publisher = makers.split(' / ')
@@ -129,7 +129,7 @@ def get_gog_game_details(url: str) -> dict[str]:
         r'<div class="description">([\s\S]+?)<br\/>',
         str(description))
     description = description.group()
-    description = re.sub(r'<.*?>', '', description).replace('\n', '')
+    description = re.sub(r'<.*?>', '', description).replace('\n', '').strip()
 
     return {
         'publishers': [publisher],
@@ -153,7 +153,7 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
     for item in json_data:
         link = item['url']
         if link:
-            details = get_gog_game_details(link)
+            details = get_gog_game_details(get_html(link))
             full_data = item | details
             games_full_data.append(full_data)
     return games_full_data
@@ -164,8 +164,6 @@ if __name__ == "__main__":
     existing_games = get_existing_games(S3_PATH, main_session)
 
     gog_html = get_html(GOG_URL)
-    print(gog_html[:1000000])
-    input()
     scraped_games = parse_games_bs(gog_html)
     new_games = [
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
