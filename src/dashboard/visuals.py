@@ -194,3 +194,8 @@ def releases_by_store():
         color="store_name"
     )
     st.altair_chart(pie_chart, use_container_width=True)
+
+
+# average price by platform
+
+# genre combinations
