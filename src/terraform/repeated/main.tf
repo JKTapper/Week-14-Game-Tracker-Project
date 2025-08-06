@@ -113,7 +113,7 @@ resource "aws_lambda_function" "el_epic_lambda" {
 # Schedule (daily)
 resource "aws_cloudwatch_event_rule" "daily_midnight" {
   name                = "c18-game-tracker-lambda-el-epic-daily-schedule"
-  schedule_expression = "cron(0 0 * * ? *)"
+  schedule_expression = "cron(0 23 * * ? *)"
 }
 
 
