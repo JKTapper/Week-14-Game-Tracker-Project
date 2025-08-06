@@ -73,7 +73,7 @@ def count_releases_by_day():
             SELECT
             release_date
             FROM game
-            WHERE EXTRACT(YEAR FROM release_date) >= 2025
+            WHERE release_date >= '2025-07-31'
             AND release_date <= CURRENT_DATE
             """
     with st.spinner("Fetching game data..."):
@@ -193,14 +193,36 @@ def releases_by_store():
     store_count = game_df.groupby(
         game_df['store_name']
     ).size().reset_index(name='count')
+    store_count['Store'] = store_count['store_name']
 
     pie_chart = alt.Chart(store_count).mark_arc().encode(
         theta="count",
-        color="store_name"
+        color="Store"
     )
     st.altair_chart(pie_chart, use_container_width=True)
 
 
 # average price by platform
+def average_price_by_platform():
+    """Creates a bar chart showing the average price of games released on each platform"""
+    query = """
+            SELECT
+            AVG(price) as "Average price", store_name AS "Store" FROM game
+            JOIN store USING(store_id)
+            GROUP BY store_name
+            """
+    with st.spinner("Fetching game data..."):
+        avg_price_df = fetch_game_data(query)
+
+    bar_chart = alt.Chart(avg_price_df).mark_bar().encode(
+        x=alt.X('Store', title='Store', sort='-y'),
+        y=alt.Y('Average price', title='Average price'),
+        color=alt.Color('Average price', legend=None)
+    ).properties(
+        width=600,
+        height=300
+    ).interactive()
+
+    st.altair_chart(bar_chart, use_container_width=True)
 
 # genre combinations
