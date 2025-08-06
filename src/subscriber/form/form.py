@@ -8,13 +8,27 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine, Connection
 from flask import Flask, render_template, request, Response
-
+import boto3
 from typing import List, Union
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+
+def verify_email(email: str) -> None:
+    """
+    Verifies email for SES
+    """
+    ses = boto3.client("ses", region_name="eu-west-2")
+    ses.verify_email_identity(
+        EmailAddress=email
+    )
+    return (f"Verification email sent to {email}. Check your inbox and click the link to complete verification.")
+    
+
+
 
 
 def connect_to_rds() -> Engine:
@@ -84,7 +98,7 @@ def form() -> Union[str, Response]:
                 if genres_sub:
                     insert_sub_genre_assignment(conn, subscriber_id, genres_sub)
 
-                return f"Thank you! We'll contact you at {email}."
+                return verify_email(email)
 
         except Exception as e:
             logger.error(f"Error inserting subscriber: {e}")

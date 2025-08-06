@@ -43,4 +43,5 @@ streamlit==1.47.1
 altair
 flask
 sqlalchemy
+epicstore_api
 altair
