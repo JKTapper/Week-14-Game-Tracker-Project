@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
-    find_mean_price, find_new_release_count, find_free_count
+    find_mean_price, find_new_release_count, find_free_count, DAY_RANGE
 
 
 def create_summary_html() -> str:
@@ -13,7 +13,7 @@ def create_summary_html() -> str:
         A string containing the HTML for the report.
     """
     mean_price = find_mean_price()
-    releases_week = find_new_release_count(7)
+    releases_week = find_new_release_count(DAY_RANGE)
     free_games_count = find_free_count()
     report_date = datetime.now().strftime("%d-%m-%Y")
 
