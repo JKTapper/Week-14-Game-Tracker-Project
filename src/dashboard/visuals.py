@@ -173,3 +173,24 @@ def best_weekday():
     ).interactive()
 
     st.altair_chart(bar_chart, use_container_width=True)
+
+
+def releases_by_store():
+    '''Creates a pie chart showing the number of games released by each store recently'''
+    query = """
+            SELECT game.store_id, store.store_name
+            FROM game
+            JOIN store USING (store_id)
+            """
+    with st.spinner("Fetching game data..."):
+        game_df = fetch_game_data(query)
+
+    store_count = game_df.groupby(
+        game_df['store_name']
+    ).size().reset_index(name='count')
+
+    pie_chart = alt.Chart(store_count).mark_arc().encode(
+        theta="count",
+        color="store_name"
+    )
+    st.altair_chart(pie_chart, use_container_width=True)
