@@ -42,6 +42,7 @@ def find_new_release_count(day_range):
             SELECT count(game_name) as game_count
             FROM game
             WHERE release_date >= NOW() - INTERVAL '{day_range} days'
+            AND release_date <= CURRENT_DATE
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)
@@ -73,6 +74,7 @@ def count_releases_by_day():
             release_date
             FROM game
             WHERE EXTRACT(YEAR FROM release_date) > 2000
+            AND release_date <= CURRENT_DATE
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
