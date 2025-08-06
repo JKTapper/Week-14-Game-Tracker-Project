@@ -352,6 +352,7 @@ resource "aws_ecs_service" "form_app_service" {
 resource "aws_lambda_function" "daily_email" {
   function_name = "c18-game-tracker-noti-sender"
   # re-used role
+
   role = aws_iam_role.lambda_exec_role_game_tracker_el.arn
 
   package_type = "Image"
