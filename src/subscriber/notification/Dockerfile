@@ -1,0 +1,12 @@
+FROM public.ecr.aws/lambda/python:3.12
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
+
+COPY src/subscriber/notification/ ${LAMBDA_TASK_ROOT}/
+
+
+CMD ["notification.handler"]
+
+

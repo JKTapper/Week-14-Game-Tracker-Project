@@ -9,4 +9,4 @@ COPY src/ /app/
 
 EXPOSE 8000
 
-CMD ["python3", "subscriber/form.py"]
+CMD ["python3", "subscriber/form/form.py"]
