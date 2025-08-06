@@ -5,15 +5,17 @@ import pandas as pd
 import altair as alt
 from database import fetch_game_data
 
+DAY_RANGE = 7
+
 
 def find_mean_price() -> str:
-    """Finds and returns the mean price of all games released in the last 7 days"""
+    """Finds and returns the mean price of all games released in the last given day range"""
     query = """
             SELECT AVG(price) as avg_price
             FROM game
             WHERE price > 0
             AND currency = 'GBP'
-            AND release_date >= NOW() - INTERVAL '7 days'
+            AND release_date >= NOW() - INTERVAL '{DAY_RANGE} days'
             AND release_date <= CURRENT_DATE
             """
     price_df = fetch_game_data(query)
@@ -30,7 +32,7 @@ def find_mean_price() -> str:
 
 def find_new_release_count(day_range):
     """
-    Finds the number of games released in the last 7 days
+    Finds the number of games released in the last given day range
 
     Parameters:
         day_range: A number indicating how many days worth of releases should be counted
@@ -52,12 +54,12 @@ def find_new_release_count(day_range):
 
 
 def find_free_count():
-    """Finds and returns the number of free games released in the last 7 days"""
+    """Finds and returns the number of free games released in the last given day range"""
     query = """
             SELECT count(price) as free_count
             FROM game
             WHERE price = 0
-            AND release_date >= NOW() - INTERVAL '7 days'
+            AND release_date >= NOW() - INTERVAL '{DAY_RANGE} days'
             AND release_date <= CURRENT_DATE
             """
     price_df = fetch_game_data(query)
@@ -68,12 +70,12 @@ def find_free_count():
 
 
 def count_releases_by_day():
-    """Creates a line chart showing the number of releases per day in the last 7 days"""
+    """Creates a line chart showing the number of releases per day in the last given day range"""
     query = """
             SELECT
             release_date
             FROM game
-            WHERE release_date >= NOW() - INTERVAL '7 days'
+            WHERE release_date >= NOW() - INTERVAL '{DAY_RANGE} days'
             AND release_date <= CURRENT_DATE
             """
     game_df = fetch_game_data(query)
@@ -94,14 +96,14 @@ def count_releases_by_day():
 
 
 def most_common_genres():
-    """Creates a bar chart showing the 5 most common genres in the last 7 days"""
+    """Creates a bar chart showing the 5 most common genres in the last given day range"""
     query = """
             SELECT
             genre.genre_name
             FROM game
             JOIN genre_assignment using (game_id)
             JOIN genre using (genre_id)
-            WHERE release_date >= NOW() - INTERVAL '7 days'
+            WHERE release_date >= NOW() - INTERVAL '{DAY_RANGE} days'
             AND release_date <= CURRENT_DATE
             """
     game_df = fetch_game_data(query)
@@ -123,13 +125,13 @@ def most_common_genres():
 
 
 def price_distribution_histogram():
-    """Creates a histogram showing the price of paid games released in the last 7 days"""
+    """Creates a histogram showing the price of paid games released in the last given day range"""
     query = """
             SELECT price
             FROM game
             WHERE price > 0
             AND currency = 'GBP'
-            AND release_date >= NOW() - INTERVAL '7 days'
+            AND release_date >= NOW() - INTERVAL '{DAY_RANGE} days'
             AND release_date <= CURRENT_DATE
             """
     game_df = fetch_game_data(query)
