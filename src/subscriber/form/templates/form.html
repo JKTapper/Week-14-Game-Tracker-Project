@@ -9,31 +9,29 @@
 
 <body>
     <div>
+    <h1>🎮 Game Tracker subscribe form </h1>
+    </div>
+    <div>
+    <div>
     <form method="POST">
-    <h1>Opt-in for weekly summary reports and/or email notifications</h1>
-    
     <label for="email">Email:</label>
-    <input type="email" name="email" required><br><br>
-    
+    <input type="email" name="email" required><br><br>    
     <input type="checkbox" name="summary" value=True>
     <label for="summary">Weekly Summary Reports</label><br>
     <input type="checkbox" name="notifications" value=True>
     <label for="notifications">Email notifications</label><br>
     <br><br>
-
-    <h3>Select game genres you want to subscribe to for email notifications </h3>
-        <label for="genre">Game Genre:</label>
+    <h3>Select game genres for email notifications </h3>
         {% for genre in genres %}
-        <br>
         <option value="{{ genre }}"></option>
         <input type="checkbox" name="genre" value="{{genre}}">
-        <label for="{{genre}}"> {{genre}}</label><br>
+        <label for="{{genre}}"> {{genre}}</label>
+        <br>
         {% endfor %}
         <br><br>
         <input type="submit" value="Submit">
-    
-    </form>
     </div>
+    </form>
 </body>
 
 </html>
