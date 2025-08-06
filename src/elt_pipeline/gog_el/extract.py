@@ -4,6 +4,7 @@ Takes json list of newly scraped games, requests data from API
 and adds supplementary data to the json list.'''
 import logging
 import re
+import json
 from datetime import datetime
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
@@ -163,6 +164,8 @@ if __name__ == "__main__":
     existing_games = get_existing_games(S3_PATH, main_session)
 
     gog_html = get_html(GOG_URL)
+    print(gog_html[:1000000])
+    input()
     scraped_games = parse_games_bs(gog_html)
     new_games = [
         new_game for new_game in scraped_games if str(new_game.get("app_id")) not in existing_games]
