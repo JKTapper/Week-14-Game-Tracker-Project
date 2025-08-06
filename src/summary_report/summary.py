@@ -5,24 +5,6 @@ from visuals import count_releases_by_day, most_common_genres, price_distributio
     find_mean_price, find_new_release_count, find_free_count
 
 
-def get_sub_notifications() -> pd.DataFrame:
-    """
-    Query RDS for subscribers and the genres they want email notifications for.
-    """
-    connection = connect_to_rds()
-    with connection.begin() as conn:
-        return pd.read_sql("""
-            SELECT g.genre_name, game_name, release_date, subscriber_email 
-            FROM game
-            JOIN genre_assignment ga ON ga.game_id = game.game_id
-            JOIN subscriber_genre_assignment sga ON sga.genre_id = ga.genre_id 
-            JOIN subscriber s ON s.subscriber_id = sga.subscriber_id
-            JOIN genre g ON g.genre_id = ga.genre_id
-            WHERE s.email_notifications = true
-            AND release_date >= NOW() - INTERVAL '1 days';
-        """, conn)
-
-
 def create_summary_html() -> str:
     """
     Gathers metrics and charts and creates a HTML weekly report summary.
