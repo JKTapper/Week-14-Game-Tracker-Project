@@ -347,11 +347,13 @@ resource "aws_ecs_service" "form_app_service" {
   depends_on = [aws_ecs_task_definition.form_app_task]
 }
 
+
 # Daily emails lambda
 resource "aws_lambda_function" "daily_email" {
   function_name = "c18-game-tracker-noti-sender"
   # re-used role
-  role = aws_iam_role.lambda_exec_role_game_tracker_el.name
+
+  role = aws_iam_role.lambda_exec_role_game_tracker_el.arn
 
   package_type = "Image"
   image_uri    = var.lambda_image_uri_notification
@@ -361,12 +363,12 @@ resource "aws_lambda_function" "daily_email" {
 
   environment {
     variables = {
-      LOG_LEVEL         = "INFO"
-      DATABASE_IP       = var.DATABASE_IP
-      DATABASE_PORT     = var.DATABASE_PORT
-      DATABASE_USERNAME = var.DATABASE_USERNAME
-      DATABASE_PASSWORD = var.DATABASE_PASSWORD
-      DATABASE_NAME     = var.DATABASE_NAME
+      DB_HOST     = var.DB_HOST
+      DB_PORT     = var.DB_PORT
+      DB_USERNAME = var.DB_USER
+      DB_PASSWORD = var.DB_PASSWORD
+      DB_NAME     = var.DB_NAME
+      DB_SCHEMA   = var.DB_SCHEMA
     }
   }
 }

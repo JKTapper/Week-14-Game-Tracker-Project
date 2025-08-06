@@ -1,3 +1,4 @@
+# pylint: disable=logging-fstring-interpolation, import-error
 '''Runs EL pipeline from Steam to S3 bucket'''
 import logging
 from extract import (STEAM_URL, get_existing_games, get_html,
