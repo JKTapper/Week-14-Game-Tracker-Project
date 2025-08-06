@@ -4,7 +4,7 @@ import boto3
 import pandas as pd
 import awswrangler as wr
 
-S3_PATH = "s3://c18-game-tracker-s3/input/"
+S3_PATH = "s3://c18-game-tracker-s3/input/gog/"
 
 
 def get_session() -> boto3.Session:

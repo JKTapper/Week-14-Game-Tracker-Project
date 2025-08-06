@@ -441,13 +441,13 @@ stores = [
         'store_name': 'epic',
         'store_id': 2,
         'app_id_method': lambda x: int(x, 16),
-        'requirments_method': lambda x: x
+        'requirments_method': lambda x: x if isinstance(x, str) else ''
     },
     {
         'store_name': 'gog',
         'store_id': 3,
         'app_id_method': int,
-        'requirments_method': lambda x: x
+        'requirments_method': lambda x: x if isinstance(x, str) else ''
     }
 ]
 
