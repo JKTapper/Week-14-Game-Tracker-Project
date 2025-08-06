@@ -1,31 +1,60 @@
-import os
-from dotenv import load_dotenv
-import psycopg2
-import pandas as pd
+"""This module assembles key game metrics and charts into a HTML report using weekly data."""
+
+from datetime import datetime
+from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
+    find_mean_price, find_new_release_count, find_free_count, DAY_RANGE
 
 
-def connect_to_rds():
+def create_summary_html() -> str:
     """
-    Connection to aws rds
+    Gathers metrics and charts and creates a HTML weekly report summary.
+
+    Returns:
+        A string containing the HTML for the report.
     """
-    load_dotenv()
-    print(os.getenv("DB_HOST"), os.getenv("DB_USERNAME"),
-          os.getenv("DB_PASSWORD"), os.getenv("DB_NAME"))
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        port=5432,
-        user=os.getenv("DB_USERNAME"),
-        password=os.getenv("DB_PASSWORD"),
-        dbname="postgres"
+    mean_price = find_mean_price()
+    releases_week = find_new_release_count(DAY_RANGE)
+    free_games_count = find_free_count()
+    report_date = datetime.now().strftime("%d-%m-%Y")
 
-    )
+    releases_chart_obj = count_releases_by_day()
+    genres_chart_obj = most_common_genres()
+    price_hist_obj = price_distribution_histogram()
 
+    html_content = f"""
+    <html>
+        <head>
+            <title>New Games Tracker Report</title>
+            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@5.20.1"></script>
+            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+        </head> 
+        <body style="font-family: sans-serif;">
+            <h1>New Games Tracker Weekly Report</h1>
+            <p><i>Date: {report_date}</i></p>
 
-def query_rds(conn, query):
-    return pd.read_sql(query, conn)
+            <h2>This Week's Key Stats</h2>
+            <ul>
+                <li><b>New Releases:</b> {releases_week}</li>
+                <li><b>Average Price (Paid Games):</b> {mean_price}</li>
+                <li><b>Total Free Games:</b> {free_games_count}</li>
+            </ul>
 
+            <h2>Recent Release Activity</h2>
+            <div id="releases-chart"></div>
+            
+            <h2>Most Common Genres</h2>
+            <div id="genres-chart"></div>
 
-if __name__ == "__main__":
-    connection = connect_to_rds()
-    data = query_rds(connection, "select * from game;")
-    print(data)
+            <h2>Price Distribution of Paid Games</h2>
+            <div id="price-distribution-chart"></div>
+
+            <script>
+                vegaEmbed("#releases-chart", {releases_chart_obj.to_json()});
+                vegaEmbed("#genres-chart", {genres_chart_obj.to_json()});
+                vegaEmbed("#price-distribution-chart", {price_hist_obj.to_json()});
+            </script>
+        </body>
+    </html>
+    """
+    return html_content

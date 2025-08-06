@@ -249,7 +249,7 @@ def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
     new_ids = get_game_id(len(new_data))
     new_data.loc[:, "game_id"] = new_ids
 
-    game_data["game_id"] = new_ids
+    game_data.loc["game_id"] = new_ids
 
     genres = get_reference_data(
         new_data, read_db_table_into_df('genre', conn), 'genre')
