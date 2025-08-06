@@ -65,7 +65,7 @@ def get_epic_game_summaries() -> list:
     return summaries
 
 
-def get_epic_game_details(offer_id: str, slug, namespace: str = '') -> dict:
+def get_epic_game_details(offer_id: str, slug: str, namespace: str = '') -> dict:
     '''Fetches detailed data for a store listing'''
     try:
         offer_data = api.get_offers_data(OfferData(namespace, offer_id))
