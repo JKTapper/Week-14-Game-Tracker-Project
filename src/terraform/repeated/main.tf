@@ -58,7 +58,7 @@ resource "aws_lambda_function" "docker_lambda" {
   package_type  = "Image"
   image_uri     = var.lambda_image_uri
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
-  timeout       = 60
+  timeout       = 900
   memory_size   = 512
 
   environment {
@@ -97,7 +97,7 @@ resource "aws_lambda_function" "docker_lambda_tl" {
   package_type  = "Image"
   image_uri     = var.lambda_image_uri_tl
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
-  timeout       = 60
+  timeout       = 900
   memory_size   = 512
 
   environment {
