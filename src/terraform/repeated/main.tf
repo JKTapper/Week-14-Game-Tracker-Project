@@ -347,36 +347,37 @@ resource "aws_ecs_service" "form_app_service" {
   depends_on = [aws_ecs_task_definition.form_app_task]
 }
 
+
 # Daily emails lambda
 resource "aws_lambda_function" "daily_email" {
   function_name = "c18-game-tracker-noti-sender"
   # re-used role
-  role          = aws_iam_role.lambda_exec_role_game_tracker_el.name
+  role = aws_iam_role.lambda_exec_role_game_tracker_el.arn
 
-  package_type  = "Image"
-  image_uri     = var.lambda_image_uri_notification
+  package_type = "Image"
+  image_uri    = var.lambda_image_uri_notification
 
-  timeout       = 60
-  memory_size   = 256
+  timeout     = 60
+  memory_size = 256
 
   environment {
     variables = {
-      LOG_LEVEL         = "INFO"
-      DATABASE_IP       = var.DATABASE_IP
-      DATABASE_PORT     = var.DATABASE_PORT
-      DATABASE_USERNAME = var.DATABASE_USERNAME
-      DATABASE_PASSWORD = var.DATABASE_PASSWORD
-      DATABASE_NAME     = var.DATABASE_NAME
+      DB_HOST     = var.DB_HOST
+      DB_PORT     = var.DB_PORT
+      DB_USERNAME = var.DB_USER
+      DB_PASSWORD = var.DB_PASSWORD
+      DB_NAME     = var.DB_NAME
+      DB_SCHEMA   = var.DB_SCHEMA
     }
   }
 }
 
 resource "aws_cloudwatch_event_rule" "daily_trigger" {
-  name        = "c18-game-tracker-daily-noti-schedule"
+  name                = "c18-game-tracker-daily-noti-schedule"
   schedule_expression = "cron(0 11 * * ? *)" # Every day at noon BST
 }
 
-resource "aws_cloudwatch_event_target" "lambda_target" {
+resource "aws_cloudwatch_event_target" "lambda_target_daily_email" {
   rule      = aws_cloudwatch_event_rule.daily_trigger.name
   target_id = "lambda-daily-email"
   arn       = aws_lambda_function.daily_email.arn
@@ -394,12 +395,12 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 resource "aws_iam_policy" "ses_send_email_policy" {
   name        = "game-tracker-ses-send-email"
   description = "Allow Lambda to send email via SES"
-  policy      = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ses:SendEmail",
           "ses:SendRawEmail"
         ],
