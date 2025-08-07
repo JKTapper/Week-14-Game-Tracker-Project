@@ -67,8 +67,10 @@ def send_report_email(ses_client, recipient_email: str, html_content: str):
         except FileNotFoundError:
             logger.error(
                 "Image file not found at path: %s", img_path)
+            return False
         except Exception as e:
             logger.error("Error attaching image %s: %s", filename, e)
+            return False
 
     # Send the email using SES
     try:
@@ -83,9 +85,11 @@ def send_report_email(ses_client, recipient_email: str, html_content: str):
         if error_code == 'MessageRejected':
             logger.error(
                 "Message rejected for %s. Recipient may need to verify their email.", recipient_email)
+            return False
         else:
             logger.error("Failed to send email to %s: [%s] %s",
                          recipient_email, error_code, e.response['Error']['Message'])
+            return False
 
 
 def handler(event, context):  # pylint: disable=unused-argument
@@ -119,8 +123,11 @@ def handler(event, context):  # pylint: disable=unused-argument
     failure_count = 0
     for email in emails:
         try:
-            send_report_email(ses_client, email, html_content)
-            success_count += 1
+            check_success = send_report_email(ses_client, email, html_content)
+            if check_success:
+                success_count += 1
+            else:
+                failure_count += 1
         except Exception:
             failure_count += 1
 
