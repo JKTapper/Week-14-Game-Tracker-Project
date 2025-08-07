@@ -11,10 +11,16 @@ from database import fetch_game_data
 def find_mean_price() -> str:
     """Finds and returns the mean price of all games in the entire database"""
     query = """
-            SELECT AVG(price) as avg_price
-            FROM game
-            where price > 0
-            AND currency = 'GBP'
+            WITH converted_prices AS (SELECT game_id,
+            CASE
+                WHEN currency = 'GBP' THEN price
+                WHEN currency = 'USD' THEN price*0.75
+            END AS corrected_price FROM game
+            WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
+                )
+            SELECT
+            AVG(corrected_price) as avg_price FROM game
+            JOIN converted_prices USING(game_id)
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)
@@ -123,6 +129,21 @@ def most_common_genres():
     st.altair_chart(bar_chart, use_container_width=True)
 
 
+PRICE_BUCKET_STARTS = [0, 10, 20, 30, 40]
+
+
+def convert_to_price_bucket(price: float):
+    """Takes a price and returns the bucket that price falls into"""
+    for index, num in enumerate(PRICE_BUCKET_STARTS, 1):
+        if num < price and (index == len(PRICE_BUCKET_STARTS) or price < PRICE_BUCKET_STARTS[index]):
+            range = '£' + str(num)
+            if index == len(PRICE_BUCKET_STARTS):
+                range += '+'
+            else:
+                range += '-£' + str(PRICE_BUCKET_STARTS[index])
+            return range
+
+
 def price_distribution_histogram():
     """Creates a histogram showing the price of paid games by querying the the database"""
     query = """
@@ -136,12 +157,17 @@ def price_distribution_histogram():
 
     price_df = game_df.dropna(subset=['price'])
     price_df['price'] = pd.to_numeric(price_df['price']/100, errors='coerce')
+    price_df['price_bucket'] = price_df['price'].apply(convert_to_price_bucket)
+    price_df = price_df.value_counts(['price_bucket']).reset_index()
+    total_games = price_df['count'].sum()
+    price_df['count'] = price_df['count'].apply(
+        lambda x: 100*x/total_games)
     hist_chart = alt.Chart(price_df).mark_bar().encode(
-        x=alt.X('price:Q', bin=alt.Bin(maxbins=10), title='Price (£)'),
-        y=alt.Y('count()', title='Number of Games'),
+        x=alt.X('price_bucket', title='Price (£)'),
+        y=alt.Y('count', title='Number of Games (%)'),
         tooltip=[
-            alt.Tooltip('count()', title='Number of games'),
-            alt.Tooltip('price:Q', bin=True, title='Price range')
+            alt.Tooltip('count', title='Number of games (%)'),
+            alt.Tooltip('price_bucket', title='Price range')
         ]
     ).interactive()
 
@@ -206,18 +232,27 @@ def releases_by_store():
 def average_price_by_platform():
     """Creates a bar chart showing the average price of games released on each platform"""
     query = """
+            WITH converted_prices AS (SELECT game_id,
+            CASE
+                WHEN currency = 'GBP' THEN price
+                WHEN currency = 'USD' THEN price*0.75
+            END AS corrected_price FROM game
+            WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
+                )
             SELECT
-            AVG(price) as "Average price", store_name AS "Store" FROM game
-            JOIN store USING(store_id)
+            AVG(corrected_price) as average, store_name AS "Store" FROM game
+            JOIN store USING(store_id) JOIN converted_prices USING(game_id)
             GROUP BY store_name
             """
     with st.spinner("Fetching game data..."):
         avg_price_df = fetch_game_data(query)
+    avg_price_df['Average price (£)'] = avg_price_df['average'].apply(
+        lambda x: float(x)/100)
 
     bar_chart = alt.Chart(avg_price_df).mark_bar().encode(
-        x=alt.X('Store', title='Store', sort='-y'),
-        y=alt.Y('Average price', title='Average price'),
-        color=alt.Color('Average price', legend=None)
+        x=alt.X('Store', title='Store', sort=avg_price_df['average']),
+        y=alt.Y('Average price (£)', title='Average price (£)'),
+        color=alt.Color('Average price (£)', legend=None)
     ).properties(
         width=600,
         height=300
