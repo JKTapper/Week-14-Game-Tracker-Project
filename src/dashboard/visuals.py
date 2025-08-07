@@ -133,6 +133,7 @@ PRICE_BUCKET_STARTS = [0, 10, 20, 30, 40]
 
 
 def convert_to_price_bucket(price: float):
+    """Takes a price and returns the bucket that price falls into"""
     for index, num in enumerate(PRICE_BUCKET_STARTS, 1):
         if num < price and (index == len(PRICE_BUCKET_STARTS) or price < PRICE_BUCKET_STARTS[index]):
             range = '£' + str(num)
