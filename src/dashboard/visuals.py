@@ -2,6 +2,7 @@
 This module contains visualisation and metric functions for the Game Tracker Dashboard
 """
 import pandas as pd
+import numpy as np
 import streamlit as st
 import altair as alt
 from database import fetch_game_data
@@ -42,6 +43,7 @@ def find_new_release_count(day_range):
             SELECT count(game_name) as game_count
             FROM game
             WHERE release_date >= NOW() - INTERVAL '{day_range} days'
+            AND release_date <= CURRENT_DATE
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)
@@ -72,7 +74,8 @@ def count_releases_by_day():
             SELECT
             release_date
             FROM game
-            WHERE EXTRACT(YEAR FROM release_date) > 2000
+            WHERE release_date >= '2025-07-31'
+            AND release_date <= CURRENT_DATE
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
@@ -143,3 +146,127 @@ def price_distribution_histogram():
     ).interactive()
 
     st.altair_chart(hist_chart, use_container_width=True)
+
+
+def best_weekday():
+    """Creates a bar chart showing the number of games released on each weekday"""
+    query = """
+            SELECT
+            release_date FROM game
+            """
+    with st.spinner("Fetching game data..."):
+        game_df = fetch_game_data(query)
+
+    game_df['day_of_week'] = pd.to_datetime(
+        game_df['release_date']).dt.day_name()
+
+    day_order = ['Monday', 'Tuesday', 'Wednesday',
+                 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    day_release_counts = game_df.groupby(
+        game_df['day_of_week']
+    ).size().reset_index(name='count')
+
+    bar_chart = alt.Chart(day_release_counts).mark_bar().encode(
+        x=alt.X('day_of_week:O', title='Day of the Week', sort=day_order),
+        y=alt.Y('count:Q', title='Number of Releases'),
+        color=alt.Color('count:N', scale=alt.Scale(
+            scheme='magma', reverse=True), legend=None),
+        tooltip=['day_of_week', 'count']
+    ).properties(
+        width=600,
+        height=300
+    ).interactive()
+
+    st.altair_chart(bar_chart, use_container_width=True)
+
+
+def releases_by_store():
+    '''Creates a pie chart showing the number of games released by each store recently'''
+    query = """
+            SELECT game.store_id, store.store_name
+            FROM game
+            JOIN store USING (store_id)
+            """
+    with st.spinner("Fetching game data..."):
+        game_df = fetch_game_data(query)
+
+    store_count = game_df.groupby(
+        game_df['store_name']
+    ).size().reset_index(name='count')
+    store_count['Store'] = store_count['store_name']
+
+    pie_chart = alt.Chart(store_count).mark_arc().encode(
+        theta="count",
+        color="Store"
+    )
+    st.altair_chart(pie_chart, use_container_width=True)
+
+
+def average_price_by_platform():
+    """Creates a bar chart showing the average price of games released on each platform"""
+    query = """
+            SELECT
+            AVG(price) as "Average price", store_name AS "Store" FROM game
+            JOIN store USING(store_id)
+            GROUP BY store_name
+            """
+    with st.spinner("Fetching game data..."):
+        avg_price_df = fetch_game_data(query)
+
+    bar_chart = alt.Chart(avg_price_df).mark_bar().encode(
+        x=alt.X('Store', title='Store', sort='-y'),
+        y=alt.Y('Average price', title='Average price'),
+        color=alt.Color('Average price', legend=None)
+    ).properties(
+        width=600,
+        height=300
+    ).interactive()
+
+    st.altair_chart(bar_chart, use_container_width=True)
+
+# genre combinations
+
+
+def genre_combinations():
+    """Creates a heatmap showing which genres conincide with each other"""
+    query = """
+            SELECT
+            game_id ,genre_name AS "Genre"
+            FROM game
+            JOIN genre_assignment USING(game_id)
+            JOIN genre USING(genre_id)
+            ORDER BY game_id,COUNT(*) OVER (PARTITION BY genre_id) desc, genre_name
+            """
+    with st.spinner("Fetching game data..."):
+        avg_price_df = fetch_game_data(query)
+    genres = avg_price_df['Genre'].value_counts()[:11]
+
+    current_game_id = 0
+    current_games_genres = []
+    genre_combination_frequencies = {}
+
+    for row in avg_price_df.iterrows():
+        game_id, genre = row[1][:2]
+        if game_id != current_game_id:
+            current_games_genres = []
+            current_game_id = game_id
+        if genre in genres:
+            for present_genre in current_games_genres:
+                genre_combination_frequencies[(present_genre, genre)] = genre_combination_frequencies.get(
+                    (present_genre, genre), 0) + 1
+            current_games_genres.append(genre)
+
+    source = pd.DataFrame({
+        'Genres - x': [genre_pair[0] for genre_pair in genre_combination_frequencies.keys()],
+        'Genres - y': [genre_pair[1] for genre_pair in genre_combination_frequencies.keys()],
+        'frequency': genre_combination_frequencies.values()
+    })
+
+    heatmap = alt.Chart(source).mark_rect().encode(
+        x=alt.X('Genres - x', sort=genres.index),
+        y=alt.Y('Genres - y', sort=genres.index),
+        color='frequency'
+    )
+
+    st.altair_chart(heatmap)

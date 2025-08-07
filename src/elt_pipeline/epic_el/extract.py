@@ -54,7 +54,8 @@ def get_epic_game_summaries() -> list:
                     if offer_id:
                         summaries.append({
                             'app_id': offer_id,
-                            'url': f"https://store.epicgames.com/en-US/p/{slug}"
+                            'url': f"https://store.epicgames.com/en-US/p/{slug}",
+                            'title': slug
                         })
 
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -64,7 +65,7 @@ def get_epic_game_summaries() -> list:
     return summaries
 
 
-def get_epic_game_details(offer_id: str, namespace: str = '') -> dict:
+def get_epic_game_details(offer_id: str, slug: str, namespace: str = '') -> dict:
     '''Fetches detailed data for a store listing'''
     try:
         offer_data = api.get_offers_data(OfferData(namespace, offer_id))
@@ -82,6 +83,7 @@ def get_epic_game_details(offer_id: str, namespace: str = '') -> dict:
             'releaseDate') or catalog.get('effectiveDate') or ''
 
         return {
+            'title': slug,
             'app_id': catalog['id'],
             'publishers': catalog.get('publisherName', []),
             'developers': [dev_name] if dev_name else [],
@@ -97,6 +99,7 @@ def get_epic_game_details(offer_id: str, namespace: str = '') -> dict:
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.warning(f"Error fetching details for {offer_id}: {e}")
         return {
+            'title': slug,
             'app_id': offer_id,
             'publishers': [],
             'developers': [],
@@ -137,7 +140,7 @@ def fetch_game_with_release_check(item, product_map, release_cutoff) -> dict | N
     if not app_id:
         return None
 
-    details = get_epic_game_details(app_id, namespace)
+    details = get_epic_game_details(app_id, slug, namespace)
     release_str = details.get('release')
 
     try:

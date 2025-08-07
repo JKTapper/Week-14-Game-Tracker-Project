@@ -5,7 +5,8 @@ and charts
 
 import streamlit as st
 from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
-    find_mean_price, find_new_release_count, find_free_count
+    find_mean_price, find_new_release_count, find_free_count, best_weekday, releases_by_store, \
+    average_price_by_platform, genre_combinations
 
 
 st.set_page_config(page_title="Game Tracker Dashboard",
@@ -34,3 +35,15 @@ most_common_genres()
 
 st.subheader("Price Distribution of Paid Games")
 price_distribution_histogram()
+
+st.subheader("Releases by Weekday")
+best_weekday()
+
+st.subheader("Releases by Store")
+releases_by_store()
+
+st.subheader("Average price by Store")
+average_price_by_platform()
+
+st.subheader("Genre Combinations")
+genre_combinations()

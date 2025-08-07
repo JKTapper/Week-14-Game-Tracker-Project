@@ -72,7 +72,7 @@ def form() -> Union[str, Response]:
     connection = connect_to_rds()
 
     with connection.begin() as conn:
-        genres = pd.read_sql("SELECT * FROM genre;", conn)["genre_name"]
+        genres = pd.read_sql("SELECT * FROM genre where genre_name != 'Simuleringar';", conn)["genre_name"]
 
     if request.method == "POST":
         email = request.form["email"]
@@ -82,6 +82,13 @@ def form() -> Union[str, Response]:
 
         try:
             with connection.begin() as conn:
+                
+                # If email exists delete the data
+                conn.execute(
+                        text("""delete from subscriber where subscriber_email = :email"""),
+                        {"email": email}
+                    )
+
                 result = conn.execute(
                     text("""INSERT INTO subscriber (subscriber_email, email_notifications, summary)
                             VALUES (:email, :email_notifications, :summary)
@@ -102,9 +109,34 @@ def form() -> Union[str, Response]:
 
         except Exception as e:
             logger.error(f"Error inserting subscriber: {e}")
-            return "Email already registered use another one"
+            return "There was an error with your request"
 
     return render_template("form.html", genres=genres)
+
+
+@app.route("/unsubscribe", methods=["GET", "POST"])
+def unsub_form() -> Union[str, Response]:
+    """
+    Display or process the subscription form.
+    """
+
+    if request.method == "POST":
+        email = request.form["email"]
+        connection = connect_to_rds()
+        try:
+            with connection.begin() as conn:
+                conn.execute(
+                        text("""delete from subscriber where subscriber_email = :email"""),
+                        {"email": email}
+                    )
+                return "Unsubscribed from notifications succesfully"
+        except Exception as e:
+            logger.error("Error unsubscribing:", e)
+            return "Email doesn't exist"
+
+    
+    return render_template("unsub.html")
+
 
 
 if __name__ == "__main__":

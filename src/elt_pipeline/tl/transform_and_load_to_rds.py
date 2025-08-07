@@ -149,14 +149,14 @@ def extract_memory_requirements(requirements: dict) -> str:
     if not isinstance(requirements, dict):
         return None
     try:
+        requirements_string = requirements['minimum']
         match = re.search(
-            r'(?<=<strong>Storage:<\\\/strong> ).+?(?= available space)',
-            requirements['minimum']
-        ).group()
+            r'(?<=<strong>Storage:<\/strong> ).+?(?= available space)', requirements_string).group()
         if match:
             return match
         return None
-    except Exception:
+    except Exception as e:
+        logging.error(e)
         return None
 
 
@@ -172,15 +172,13 @@ def interpret_release_date(release_date: str) -> date:
         return None
 
 
-GAME_DATA_TRANSLATION = [
+GAME_DATA_TRANSLATION_BASE = [
     {'old_name': 'release', 'new_name': 'release_date',
         'translation': interpret_release_date},
     {'name': 'description',
         'translation': lambda x: x},
-    {'old_name': 'requirements', 'new_name': 'storage_requirements',
-        'translation': extract_memory_requirements},
     {'name': 'price',
-        'translation': lambda x: float(x) if pd.notna(x) else 0},
+        'translation': lambda x: x if pd.notna(x) else 0},
     {'old_name': 'title', 'new_name': 'game_name',
         'translation': lambda x: x},
     {'name': 'app_id',
@@ -188,6 +186,8 @@ GAME_DATA_TRANSLATION = [
     {'name': 'currency',
         'translation': lambda x: 'GBP' if pd.isna(x) else x},
     {'old_name': 'image', 'new_name': 'image_url',
+        'translation': lambda x: x},
+    {'old_name': 'url', 'new_name': 'game_url',
         'translation': lambda x: x}
 ]
 
@@ -213,15 +213,16 @@ def get_game_id(count: int) -> list[int]:
     return new_ids
 
 
-def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
+def transform_s3_steam_data(conn, store: dict[str]) -> dict[str:pd.DataFrame]:
     """
     Reads data in the S3, discards any data already in the RDS and
     transforms it into the correct format to be uploaded to the RDS
     """
     try:
-        raw_df = wr.s3.read_parquet(S3_PATH + store_name)
+        raw_df = wr.s3.read_parquet(S3_PATH + store['store_name'])
     except Exception as e:
-        logging.error('Error reading S3 path %s: %s', S3_PATH + store_name, e)
+        logging.error('Error reading S3 path %s: %s',
+                      S3_PATH + store['store_name'], e)
         return {
             'genre': pd.DataFrame(),
             'publisher': pd.DataFrame(),
@@ -229,27 +230,33 @@ def transform_s3_steam_data(conn, store_name: str) -> dict[str:pd.DataFrame]:
             'genre_assignment': pd.DataFrame(),
             'publisher_assignment': pd.DataFrame(),
             'developer_assignment': pd.DataFrame(),
-            'game': pd.DataFrame()
+            'game': pd.DataFrame(),
         }
-    raw_df['app_id'] = raw_df['app_id'].astype(int)
+    raw_df['app_id'] = raw_df['app_id'].apply(store['app_id_method'])
     logging.info("Data about %s %s games downloaded from S3",
-                 len(raw_df), store_name)
+                 len(raw_df), store['store_name'])
 
     existing_data = read_db_table_into_df('game', conn)
     existing_data['game_id'] = pd.to_numeric(
         existing_data['game_id'], errors='coerce').fillna(0).astype(int)
     logging.info("Data about %s games downloaded from RDS", len(existing_data))
-
     new_data = raw_df[~raw_df['app_id'].isin(existing_data['app_id'])].copy()
     logging.info("%s new games identified", len(new_data))
 
-    game_data = process_data(new_data, GAME_DATA_TRANSLATION)
+    store_translation = [
+        {'old_name': 'requirements', 'new_name': 'storage_requirements',
+         'translation': store['requirments_method']},
+        {'name': 'store_id',
+         'value': store['store_id']}
+    ] + GAME_DATA_TRANSLATION_BASE
+
+    game_data = process_data(new_data, store_translation)
     logging.info("Game data transformed")
 
     new_ids = get_game_id(len(new_data))
-    new_data.loc[:, "game_id"] = new_ids
+    new_data["game_id"] = new_ids
 
-    game_data.loc["game_id"] = new_ids
+    game_data["game_id"] = new_ids
 
     genres = get_reference_data(
         new_data, read_db_table_into_df('genre', conn), 'genre')
@@ -319,10 +326,10 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
     sql = text("""
         INSERT INTO game (
           game_id, game_name, app_id, store_id, release_date, image_url, 
-          game_description, storage_requirements, price, currency
+          game_description, storage_requirements, price, currency, game_url
         ) VALUES (
           :game_id, :game_name, :app_id, :store_id, :release_date, :image_url, 
-          :game_description, :storage_requirements, :price, :currency
+          :game_description, :storage_requirements, :price, :currency, :game_url
         )
         ON CONFLICT (app_id) DO NOTHING
     """)
@@ -339,6 +346,7 @@ def upload_games(conn, games_df: pd.DataFrame) -> None:
             "storage_requirements": row["storage_requirements"],
             "price": row["price"],
             "currency": row["currency"],
+            "game_url": row["game_url"]
         })
 
 
@@ -425,18 +433,39 @@ def load_data_into_database(conn, games_df: pd.DataFrame,
                        "publisher_assignment", "publisher_id", "game_id")
 
 
+stores = [
+    {
+        'store_name': 'steam',
+        'store_id': 1,
+        'app_id_method': int,
+        'requirments_method': extract_memory_requirements
+    },
+    {
+        'store_name': 'epic',
+        'store_id': 2,
+        'app_id_method': lambda x: int(x, 16),
+        'requirments_method': lambda x: x if isinstance(x, str) else ''
+    },
+    {
+        'store_name': 'gog',
+        'store_id': 3,
+        'app_id_method': int,
+        'requirments_method': lambda x: x if isinstance(x, str) else ''
+    }
+]
+
+
 def main():
     """Main to run other functions"""
     engine = get_engine()
-    with engine.connect() as conn:
-        with conn.begin():
-            for store_id, store_name in enumerate(['steam', 'epic'], 1):
-                data = transform_s3_steam_data(conn, store_name)
+    for store in stores:
+        with engine.connect() as conn:
+            with conn.begin():
+                data = transform_s3_steam_data(conn, store)
                 if data['game'].empty:
                     logging.warning(
-                        "No new game data for %s, skipping upload.", store_name)
+                        "No new game data for %s, skipping upload.", store)
                     continue
-                data["game"]['store_id'] = store_id
                 load_data_into_database(
                     conn, data["game"], data["publisher"],
                     data["developer"], data["genre"],
