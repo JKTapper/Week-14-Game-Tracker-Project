@@ -8,18 +8,18 @@ import altair as alt
 from database import fetch_game_data
 
 
-def find_mean_price() -> str:
+def find_mean_price(filter_with_statement: str) -> str:
     """Finds and returns the mean price of all games in the entire database"""
-    query = """
-            WITH converted_prices AS (SELECT game_id,
+    query = filter_with_statement + """
+            ,converted_prices AS (SELECT game_id,
             CASE
                 WHEN currency = 'GBP' THEN price
                 WHEN currency = 'USD' THEN price*0.75
-            END AS corrected_price FROM game
+            END AS corrected_price FROM filtered_games
             WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
                 )
             SELECT
-            AVG(corrected_price) as avg_price FROM game
+            AVG(corrected_price) as avg_price FROM filtered_games
             JOIN converted_prices USING(game_id)
             """
     with st.spinner("Fetching game data..."):
@@ -35,7 +35,7 @@ def find_mean_price() -> str:
     return average_price
 
 
-def find_new_release_count(day_range):
+def find_new_release_count(day_range, filter_with_statement: str):
     """
     Finds the number of games released in either the last 7 days or last 30 days
 
@@ -45,9 +45,9 @@ def find_new_release_count(day_range):
     Returns:
         A number representing the total number of games released in this time day_range
     """
-    query = f"""
+    query = filter_with_statement + f"""
             SELECT count(game_name) as game_count
-            FROM game
+            FROM filtered_games
             WHERE release_date >= NOW() - INTERVAL '{day_range} days'
             AND release_date <= CURRENT_DATE
             """
@@ -59,11 +59,11 @@ def find_new_release_count(day_range):
     return game_count
 
 
-def find_free_count():
+def find_free_count(filter_with_statement: str):
     """Finds and returns the number of free games in the entire database"""
-    query = """
+    query = filter_with_statement + """
             SELECT count(price) as free_count
-            FROM game
+            FROM filtered_games
             WHERE price = 0
             """
     with st.spinner("Fetching game data..."):
@@ -74,12 +74,12 @@ def find_free_count():
     return free_count
 
 
-def count_releases_by_day():
+def count_releases_by_day(filter_with_statement: str):
     """Creates a line chart showing the number of releases per day by querying the the database"""
-    query = """
+    query = filter_with_statement + """
             SELECT
             release_date, store_name
-            FROM game JOIN store USING(store_id)
+            FROM filtered_games JOIN store USING(store_id)
             WHERE release_date >= '2025-07-31'
             AND release_date <= CURRENT_DATE
             """
@@ -87,14 +87,6 @@ def count_releases_by_day():
         game_df = fetch_game_data(query)
 
     game_df['release_date'] = pd.to_datetime(game_df['release_date'])
-
-    store_options = st.multiselect(
-        "Stores",
-        game_df['store_name'].unique(),
-        game_df['store_name'].unique()
-    )
-
-    game_df = game_df[game_df['store_name'].isin(store_options)]
 
     daily_release_counts = game_df.groupby(
         game_df['release_date'].dt.date
@@ -109,27 +101,18 @@ def count_releases_by_day():
     st.altair_chart(line_chart, use_container_width=True)
 
 
-def most_common_genres():
+def most_common_genres(filter_with_statement: str):
     """Creates a bar chart showing the 5 most common genres by querying the the database"""
-    query = """
+    query = filter_with_statement + """
             SELECT
             genre.genre_name, store_name
-            FROM game
+            FROM filtered_games
             JOIN genre_assignment using (game_id)
             JOIN genre using (genre_id)
             JOIN store USING(store_id)
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
-
-    store_options = st.multiselect(
-        "Stores",
-        game_df['store_name'].unique(),
-        game_df['store_name'].unique(),
-        key=1
-    )
-
-    game_df = game_df[game_df['store_name'].isin(store_options)]
 
     genre_counts = game_df['genre_name'].value_counts().head(
         5).reset_index(name='count')
@@ -162,28 +145,19 @@ def convert_to_price_bucket(price: float):
             return range
 
 
-def price_distribution_histogram():
+def price_distribution_histogram(filter_with_statement: str):
     """Creates a histogram showing the price of paid games by querying the the database"""
-    query = """
+    query = filter_with_statement + """
             SELECT store_name,
             CASE
                 WHEN currency = 'GBP' THEN price
                 WHEN currency = 'USD' THEN price*0.75
             END AS price
-            FROM game JOIN store USING(store_id)
+            FROM filtered_games JOIN store USING(store_id)
             WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
-
-    store_options = st.multiselect(
-        "Stores",
-        game_df['store_name'].unique(),
-        game_df['store_name'].unique(),
-        key=2
-    )
-
-    game_df = game_df[game_df['store_name'].isin(store_options)]
 
     price_df = game_df.dropna(subset=['price'])
     price_df['price'] = pd.to_numeric(price_df['price']/100, errors='coerce')
@@ -204,11 +178,11 @@ def price_distribution_histogram():
     st.altair_chart(hist_chart, use_container_width=True)
 
 
-def best_weekday():
+def best_weekday(filter_with_statement: str):
     """Creates a bar chart showing the number of games released on each weekday"""
-    query = """
+    query = filter_with_statement + """
             SELECT
-            release_date FROM game
+            release_date FROM filtered_games
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
@@ -237,11 +211,11 @@ def best_weekday():
     st.altair_chart(bar_chart, use_container_width=True)
 
 
-def releases_by_store():
+def releases_by_store(filter_with_statement):
     '''Creates a pie chart showing the number of games released by each store recently'''
-    query = """
+    query = filter_with_statement + """
             SELECT game.store_id, store.store_name
-            FROM game
+            FROM filtered_games
             JOIN store USING (store_id)
             """
     with st.spinner("Fetching game data..."):
@@ -259,18 +233,18 @@ def releases_by_store():
     st.altair_chart(pie_chart, use_container_width=True)
 
 
-def average_price_by_platform():
+def average_price_by_platform(filter_with_statement: str):
     """Creates a bar chart showing the average price of games released on each platform"""
-    query = """
-            WITH converted_prices AS (SELECT game_id,
+    query = filter_with_statement + """
+            ,converted_prices AS (SELECT game_id,
             CASE
                 WHEN currency = 'GBP' THEN price
                 WHEN currency = 'USD' THEN price*0.75
-            END AS corrected_price FROM game
+            END AS corrected_price FROM filtered_games
             WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
                 )
             SELECT
-            AVG(corrected_price) as average, store_name AS "Store" FROM game
+            AVG(corrected_price) as average, store_name AS "Store" FROM filtered_games
             JOIN store USING(store_id) JOIN converted_prices USING(game_id)
             GROUP BY store_name
             """
@@ -293,12 +267,12 @@ def average_price_by_platform():
 # genre combinations
 
 
-def genre_combinations():
+def genre_combinations(filter_with_statement):
     """Creates a heatmap showing which genres conincide with each other"""
-    query = """
+    query = filter_with_statement + """
             SELECT
             game_id ,genre_name AS "Genre"
-            FROM game
+            FROM filtered_games
             JOIN genre_assignment USING(game_id)
             JOIN genre USING(genre_id)
             ORDER BY game_id,COUNT(*) OVER (PARTITION BY genre_id) desc, genre_name
