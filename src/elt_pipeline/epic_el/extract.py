@@ -92,7 +92,7 @@ def get_epic_game_details(offer_id: str, slug: str, namespace: str = '') -> dict
             'is_free': catalog.get('price', {}).get('totalPrice', {}).get('discountPrice', 1) == 0,
             'price': catalog.get('price', {}).get('totalPrice', {}).get('discountPrice', 0),
             'currency': catalog.get('price', {}).get('totalPrice', {}).get('currencyCode', 'USD'),
-            'genres': [tag.get('name') for tag in catalog.get('tags', []) if tag.get('name')],
+            'genres': [tag.get('name') for tag in catalog.get('tags', ["epic"]) if tag.get('name')] or "epic",
             'image': catalog.get('keyImages', [{}])[0].get('url', ''),
             'release': release_date or ''
         }
@@ -146,7 +146,7 @@ def fetch_game_with_release_check(item, product_map, release_cutoff) -> dict | N
     try:
         if release_str:
             release_dt = datetime.fromisoformat(release_str.replace('Z', ''))
-            if release_dt.date() == release_cutoff:
+            if release_dt.date() <= release_cutoff:
                 return {**item, **details}
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.warning(
