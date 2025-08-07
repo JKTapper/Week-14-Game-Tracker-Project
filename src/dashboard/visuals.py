@@ -11,10 +11,16 @@ from database import fetch_game_data
 def find_mean_price() -> str:
     """Finds and returns the mean price of all games in the entire database"""
     query = """
-            SELECT AVG(price) as avg_price
-            FROM game
-            where price > 0
-            AND currency = 'GBP'
+            WITH converted_prices AS (SELECT game_id,
+            CASE
+                WHEN currency = 'GBP' THEN price
+                WHEN currency = 'USD' THEN price*0.75
+            END AS corrected_price FROM game
+            WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
+                )
+            SELECT
+            AVG(corrected_price) as avg_price FROM game
+            JOIN converted_prices USING(game_id)
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)
@@ -225,11 +231,16 @@ def releases_by_store():
 def average_price_by_platform():
     """Creates a bar chart showing the average price of games released on each platform"""
     query = """
+            WITH converted_prices AS (SELECT game_id,
+            CASE
+                WHEN currency = 'GBP' THEN price
+                WHEN currency = 'USD' THEN price*0.75
+            END AS corrected_price FROM game
+            WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
+                )
             SELECT
-            AVG(price) as average, store_name AS "Store" FROM game
-            JOIN store USING(store_id)
-            where price > 0
-            AND currency = 'GBP'
+            AVG(corrected_price) as average, store_name AS "Store" FROM game
+            JOIN store USING(store_id) JOIN converted_prices USING(game_id)
             GROUP BY store_name
             """
     with st.spinner("Fetching game data..."):
