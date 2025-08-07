@@ -2,7 +2,6 @@
 This module contains visualisation and metric functions for the Game Tracker Dashboard
 """
 import pandas as pd
-import numpy as np
 import streamlit as st
 import altair as alt
 from database import fetch_game_data
@@ -136,13 +135,15 @@ PRICE_BUCKET_STARTS = [0, 10, 20, 30, 40]
 def convert_to_price_bucket(price: float):
     """Takes a price and returns the bucket that price falls into"""
     for index, num in enumerate(PRICE_BUCKET_STARTS, 1):
-        if num < price and (index == len(PRICE_BUCKET_STARTS) or price < PRICE_BUCKET_STARTS[index]):
-            range = '£' + str(num)
+        if num < price and (index == len(PRICE_BUCKET_STARTS)
+                            or price < PRICE_BUCKET_STARTS[index]):
+            display_range = '£' + str(num)
             if index == len(PRICE_BUCKET_STARTS):
-                range += '+'
+                display_range += '+'
             else:
-                range += '-£' + str(PRICE_BUCKET_STARTS[index])
-            return range
+                display_range += '-£' + str(PRICE_BUCKET_STARTS[index])
+            return display_range
+    return None
 
 
 def price_distribution_histogram(filter_with_statement: str):
@@ -292,13 +293,16 @@ def genre_combinations(filter_with_statement):
             current_game_id = game_id
         if genre in genres:
             for present_genre in current_games_genres:
-                genre_combination_frequencies[(present_genre, genre)] = genre_combination_frequencies.get(
+                genre_combination_frequencies[(
+                    present_genre,
+                    genre
+                )] = genre_combination_frequencies.get(
                     (present_genre, genre), 0) + 1
             current_games_genres.append(genre)
 
     source = pd.DataFrame({
-        'Genres - x': [genre_pair[0] for genre_pair in genre_combination_frequencies.keys()],
-        'Genres - y': [genre_pair[1] for genre_pair in genre_combination_frequencies.keys()],
+        'Genres - x': [genre_pair[0] for genre_pair in genre_combination_frequencies],
+        'Genres - y': [genre_pair[1] for genre_pair in genre_combination_frequencies],
         'frequency': genre_combination_frequencies.values()
     })
 
