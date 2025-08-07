@@ -152,18 +152,26 @@ resource "aws_lambda_function" "el_gog_lambda" {
 }
 
 
+# Schedule (daily)
+resource "aws_cloudwatch_event_rule" "daily_midnight_gog" {
+  name                = "c18-game-tracker-lambda-el-gog-daily-schedule"
+  schedule_expression = "cron(0 23 * * ? *)"
+}
+
+
+
 # Permission for EventBridge to invoke Lambda
 resource "aws_lambda_permission" "allow_event_el_gog" {
   statement_id  = "AllowExecutionFromEventBridge"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.el_gog_lambda.function_name
   principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.daily_midnight.arn
+  source_arn    = aws_cloudwatch_event_rule.daily_midnight_gog.arn
 }
 
 # EventBridge Target
 resource "aws_cloudwatch_event_target" "lambda_target_gog_epic" {
-  rule      = aws_cloudwatch_event_rule.daily_midnight.name
+  rule      = aws_cloudwatch_event_rule.daily_midnight_gog.name
   target_id = "lambda"
   arn       = aws_lambda_function.el_gog_lambda.arn
 }
