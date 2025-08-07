@@ -4,7 +4,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
-COPY src/elt_pipeline/steam_tl/lambda.py ${LAMBDA_TASK_ROOT}/
-COPY src/elt_pipeline/steam_tl/transform_and_load_to_rds.py ${LAMBDA_TASK_ROOT}/
+COPY src/elt_pipeline/tl/lambda.py ${LAMBDA_TASK_ROOT}/
+COPY src/elt_pipeline/tl/transform_and_load_to_rds.py ${LAMBDA_TASK_ROOT}/
 
 CMD ["lambda.handler"]
