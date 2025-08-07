@@ -39,11 +39,11 @@ price_distribution_histogram()
 st.subheader("Releases by Weekday")
 best_weekday()
 
-st.subheader("Releases by Store")
-releases_by_store()
+# st.subheader("Releases by Store")
+# releases_by_store()
 
 st.subheader("Average price by Store")
 average_price_by_platform()
 
-st.subheader("Genre Combinations")
-genre_combinations()
+# st.subheader("Genre Combinations")
+# genre_combinations()

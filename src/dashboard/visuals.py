@@ -165,10 +165,13 @@ def convert_to_price_bucket(price: float):
 def price_distribution_histogram():
     """Creates a histogram showing the price of paid games by querying the the database"""
     query = """
-            SELECT price
-            FROM game
-            WHERE price > 0
-            AND currency = 'GBP'
+            SELECT store_name,
+            CASE
+                WHEN currency = 'GBP' THEN price
+                WHEN currency = 'USD' THEN price*0.75
+            END AS price
+            FROM game JOIN store USING(store_id)
+            WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
