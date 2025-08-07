@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 from botocore.exceptions import ClientError
-from summary_visuals import create_summary_html
+from summary import create_summary_html
 from database import fetch_game_data
 import pandas as pd
 import boto3
