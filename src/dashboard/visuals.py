@@ -72,8 +72,8 @@ def count_releases_by_day():
     """Creates a line chart showing the number of releases per day by querying the the database"""
     query = """
             SELECT
-            release_date
-            FROM game
+            release_date, store_name
+            FROM game JOIN store USING(store_id)
             WHERE release_date >= '2025-07-31'
             AND release_date <= CURRENT_DATE
             """
@@ -81,6 +81,14 @@ def count_releases_by_day():
         game_df = fetch_game_data(query)
 
     game_df['release_date'] = pd.to_datetime(game_df['release_date'])
+
+    store_options = st.multiselect(
+        "Stores",
+        game_df['store_name'].unique(),
+        game_df['store_name'].unique()
+    )
+
+    game_df = game_df[game_df['store_name'].isin(store_options)]
 
     daily_release_counts = game_df.groupby(
         game_df['release_date'].dt.date
@@ -99,13 +107,23 @@ def most_common_genres():
     """Creates a bar chart showing the 5 most common genres by querying the the database"""
     query = """
             SELECT
-            genre.genre_name
+            genre.genre_name, store_name
             FROM game
             JOIN genre_assignment using (game_id)
             JOIN genre using (genre_id)
+            JOIN store USING(store_id)
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
+
+    store_options = st.multiselect(
+        "Stores",
+        game_df['store_name'].unique(),
+        game_df['store_name'].unique(),
+        key=1
+    )
+
+    game_df = game_df[game_df['store_name'].isin(store_options)]
 
     genre_counts = game_df['genre_name'].value_counts().head(
         5).reset_index(name='count')
@@ -133,6 +151,15 @@ def price_distribution_histogram():
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
+
+    store_options = st.multiselect(
+        "Stores",
+        game_df['store_name'].unique(),
+        game_df['store_name'].unique(),
+        key=2
+    )
+
+    game_df = game_df[game_df['store_name'].isin(store_options)]
 
     price_df = game_df.dropna(subset=['price'])
     price_df['price'] = pd.to_numeric(price_df['price']/100, errors='coerce')
