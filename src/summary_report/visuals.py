@@ -1,5 +1,5 @@
 """
-This module contains visualisation and metric functions for the Game Tracker Weekly Report
+This module contains visualisation and metric functions for the Game Tracker Weekly Report.
 """
 import pandas as pd
 import altair as alt
