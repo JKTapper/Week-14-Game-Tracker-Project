@@ -44,6 +44,3 @@ altair
 flask
 sqlalchemy
 epicstore_api
-=========
-altair
->>>>>>>>> Temporary merge branch 2
