@@ -146,7 +146,7 @@ def fetch_game_with_release_check(item, product_map, release_cutoff) -> dict | N
     try:
         if release_str:
             release_dt = datetime.fromisoformat(release_str.replace('Z', ''))
-            if release_dt.date() <= release_cutoff:
+            if release_dt.date() == release_cutoff:
                 return {**item, **details}
     except Exception as e:  # pylint: disable=broad-exception-caught
         logging.warning(
