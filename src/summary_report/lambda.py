@@ -3,14 +3,14 @@
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
+import os
+import json
+import logging
+import boto3
 from botocore.exceptions import ClientError
+import pandas as pd
 from summary import create_summary_html
 from database import fetch_game_data
-import pandas as pd
-import boto3
-import logging
-import json
-import os
 
 SOURCE_EMAIL = "gametrackerc18@gmail.com"
 
@@ -86,12 +86,12 @@ def send_report_email(ses_client, recipient_email: str, html_content: str):
         error_code = e.response['Error']['Code']
         if error_code == 'MessageRejected':
             logger.error(
-                "Message rejected for %s. Recipient may need to verify their email.", recipient_email)
+                "Message rejected for %s. Recipient may need to verify their email.",
+                recipient_email)
             return None
-        else:
-            logger.error("Failed to send email to %s: [%s] %s",
-                         recipient_email, error_code, e.response['Error']['Message'])
-            return None
+        logger.error("Failed to send email to %s: [%s] %s",
+                     recipient_email, error_code, e.response['Error']['Message'])
+        return None
 
 
 def handler(event, context):  # pylint: disable=unused-argument
