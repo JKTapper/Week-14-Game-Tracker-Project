@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import create_engine, text
 from unittest.mock import MagicMock, patch
-import src.elt_pipeline.steam_tl.transform_and_load_to_rds as loader
+import src.elt_pipeline.tl.transform_and_load_to_rds as loader
 
 
 games_df = pd.DataFrame({
@@ -18,6 +18,7 @@ games_df = pd.DataFrame({
     "description": ["Description A"],
     "price": [1999],
     "currency": ["GDP"],
+    "game_url": ["steam.com"]
 })
 
 publisher_df = pd.DataFrame({
@@ -95,8 +96,8 @@ def test_upload_assignments_executes_correctly():
     assert params["r"] == 123
 
 
-@patch("src.elt_pipeline.steam_tl.transform_and_load_to_rds.get_engine")
-@patch("src.elt_pipeline.steam_tl.transform_and_load_to_rds.transform_s3_steam_data")
+@patch("src.elt_pipeline.tl.transform_and_load_to_rds.get_engine")
+@patch("src.elt_pipeline.tl.transform_and_load_to_rds.transform_s3_steam_data")
 def test_load_data_into_database_calls_all_uploads(mock_transform, mock_get_engine):
     mock_transform.return_value = {
         "genre_assignment": genre_assignment_df,

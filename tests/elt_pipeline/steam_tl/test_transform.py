@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 from unittest.mock import MagicMock, patch
-from src.elt_pipeline.steam_tl.transform_and_load_to_rds import get_assignment_df, process_data, extract_memory_requirements, get_reference_data
+from src.elt_pipeline.tl.transform_and_load_to_rds import get_assignment_df, process_data, extract_memory_requirements, get_reference_data
 
 get_assignment_df_test_data = [(
     pd.DataFrame({
@@ -24,7 +24,7 @@ get_assignment_df_test_data = [(
 )]
 
 
-@patch('src.elt_pipeline.steam_tl.transform_and_load_to_rds.get_or_create_id')
+@patch('src.elt_pipeline.tl.transform_and_load_to_rds.get_or_create_id')
 @pytest.mark.parametrize(
     'main_df,reference_df,main_df_name,reference_df_name,assignment_df',
     get_assignment_df_test_data
