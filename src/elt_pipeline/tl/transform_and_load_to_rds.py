@@ -401,7 +401,7 @@ def load_data_into_database(conn, games_df: pd.DataFrame,
                             publisher_assignment_df) -> None:
     """Loads all data into our database"""
 
-    games_df["app_id"] = games_df["app_id"].astype(int)
+    games_df["app_id"] = games_df["app_id"].astype(np.int64)
     games_df["price"] = games_df["price"].astype(int)
 
     upload_table(conn, publisher_df, "publisher",
