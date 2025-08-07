@@ -7,11 +7,20 @@ import streamlit as st
 from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
     find_mean_price, find_new_release_count, find_free_count, best_weekday, releases_by_store, \
     average_price_by_platform, genre_combinations
+from PIL import Image
 
+st.set_page_config(
+    page_title="My Awesome App",
+    page_icon="logo.png",
+    layout="wide"
+)
+
+logo_image = Image.open("logo.png")
+st.image(logo_image, width=200)
 
 st.set_page_config(page_title="Game Tracker Dashboard",
                    page_icon="🎮")
-st.title("🎮 New Games Tracker")
+st.title("New Games Tracker")
 
 col1, col2 = st.columns(2)
 

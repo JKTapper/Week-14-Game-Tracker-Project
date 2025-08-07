@@ -12,6 +12,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY src/dashboard/database.py ./
 COPY src/dashboard/visuals.py ./
 COPY src/dashboard/dashboard.py ./
+COPY assets/logo.png ./
 
 # Expose the Streamlit port
 EXPOSE 8501
