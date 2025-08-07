@@ -52,13 +52,14 @@ resource "aws_iam_role_policy_attachment" "lambda_attach" {
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
+
 # Lambda Function from ECR
 resource "aws_lambda_function" "docker_lambda" {
   function_name = "c18-game-tracker-el-lambda"
   package_type  = "Image"
   image_uri     = var.lambda_image_uri
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
-  timeout       = 60
+  timeout       = 900
   memory_size   = 512
 
   environment {
@@ -91,13 +92,55 @@ resource "aws_cloudwatch_event_target" "lambda_target" {
 }
 
 
+
+# el epic lambda
+resource "aws_lambda_function" "el_epic_lambda" {
+  function_name = "c18-game-tracker-el-epic-lambda"
+  package_type  = "Image"
+  image_uri     = var.lambda_image_el_epic_uri
+  role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
+  timeout       = 900
+  memory_size   = 512
+
+  environment {
+    variables = {
+      LOG_LEVEL = "INFO"
+    }
+  }
+}
+
+
+# Schedule (daily)
+resource "aws_cloudwatch_event_rule" "daily_midnight" {
+  name                = "c18-game-tracker-lambda-el-epic-daily-schedule"
+  schedule_expression = "cron(0 23 * * ? *)"
+}
+
+
+# Permission for EventBridge to invoke Lambda
+resource "aws_lambda_permission" "allow_event_el_epic" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.el_epic_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.daily_midnight.arn
+}
+
+# EventBridge Target
+resource "aws_cloudwatch_event_target" "lambda_target_el_epic" {
+  rule      = aws_cloudwatch_event_rule.daily_midnight.name
+  target_id = "lambda"
+  arn       = aws_lambda_function.el_epic_lambda.arn
+}
+
+
 # tl lambda
 resource "aws_lambda_function" "docker_lambda_tl" {
   function_name = "c18-game-tracker-tl-lambda"
   package_type  = "Image"
   image_uri     = var.lambda_image_uri_tl
   role          = aws_iam_role.lambda_exec_role_game_tracker_el.arn
-  timeout       = 60
+  timeout       = 900
   memory_size   = 512
 
   environment {
@@ -352,6 +395,7 @@ resource "aws_ecs_service" "form_app_service" {
 resource "aws_lambda_function" "daily_email" {
   function_name = "c18-game-tracker-noti-sender"
   # re-used role
+
   role = aws_iam_role.lambda_exec_role_game_tracker_el.arn
 
   package_type = "Image"

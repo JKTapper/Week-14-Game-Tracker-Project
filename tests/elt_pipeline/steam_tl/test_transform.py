@@ -71,12 +71,12 @@ def test_process_data(unprocessed_info, config, processed_info):
 
 extract_memory_requirements_test_data = [
     (
-        {"minimum": r"""<strong>Minimum:<\/strong><br><ul class=\"bb_ul\">
-         <li><strong>OS:<\/strong> Windows 10\/11<br><\/li>
-         <li><strong>Processor:<\/strong> 1.8+ GHz or better<br><\/li>
-         <li><strong>Memory:<\/strong> 1 GB RAM<br><\/li>
-         <li><strong>Graphics:<\/strong> Intel UHD Graphics 620 or better<br><\/li>
-         <li><strong>Storage:<\/strong> 1 GB available space<\/li><\/ul>"""},
+        {"minimum": r"""<strong>Minimum:</strong><br><ul class=\"bb_ul\">
+         <li><strong>OS:</strong> Windows 10/11<br></li>
+         <li><strong>Processor:</strong> 1.8+ GHz or better<br></li>
+         <li><strong>Memory:</strong> 1 GB RAM<br></li>
+         <li><strong>Graphics:</strong> Intel UHD Graphics 620 or better<br></li>
+         <li><strong>Storage:</strong> 1 GB available space</li></ul>"""},
         '1 GB'
     )
 

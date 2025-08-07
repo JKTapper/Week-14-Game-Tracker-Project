@@ -4,6 +4,7 @@ Takes json list of newly scraped games, requests data from API
 and adds supplementary data to the json list.'''
 import logging
 import re
+import json
 from datetime import datetime
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
@@ -93,12 +94,12 @@ def parse_games_bs(html: str) -> list[dict[str]]:
     return games
 
 
-def get_gog_game_details(url: str) -> dict[str]:
+def get_gog_game_details(html: str) -> dict[str]:
     """
     Takes the gog store url for a game
     and scrapes that page for useful data
     """
-    this_game_soup = BeautifulSoup(get_html(url), "html.parser")
+    this_game_soup = BeautifulSoup(html, "html.parser")
 
     title = this_game_soup.find(
         'h1', class_='productcard-basics__title').get_text().strip()
@@ -112,8 +113,11 @@ def get_gog_game_details(url: str) -> dict[str]:
     requirements = game_details.get('Size:')
     release = game_details.get('Release date:')
 
-    release = re.search(r'\d\d\d\d-\d\d-\d\d', release).group()
-    release = datetime.strptime(release, '%Y-%m-%d').date()
+    try:
+        release = re.search(r'\d\d\d\d-\d\d-\d\d', release).group()
+        release = datetime.strptime(release, '%Y-%m-%d').date()
+    except:
+        release = datetime.strptime(release, '%B %d, %Y').date()
 
     if ' / ' in makers:
         developer, publisher = makers.split(' / ')
@@ -128,7 +132,7 @@ def get_gog_game_details(url: str) -> dict[str]:
         r'<div class="description">([\s\S]+?)<br\/>',
         str(description))
     description = description.group()
-    description = re.sub(r'<.*?>', '', description).replace('\n', '')
+    description = re.sub(r'<.*?>', '', description).replace('\n', '').strip()
 
     return {
         'publishers': [publisher],
@@ -152,7 +156,7 @@ def iterate_through_scraped_games(json_data: list[dict[str]]):
     for item in json_data:
         link = item['url']
         if link:
-            details = get_gog_game_details(link)
+            details = get_gog_game_details(get_html(link))
             full_data = item | details
             games_full_data.append(full_data)
     return games_full_data

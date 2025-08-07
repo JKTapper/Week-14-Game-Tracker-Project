@@ -38,6 +38,7 @@ def run_pipeline():
     # Add data from API with release date
     release_cutoff = datetime.today().date()
     full_game_data = iterate_through_scraped_games(new_games, release_cutoff)
+
     if not full_game_data:
         logging.info("No full game data to process, exiting.")
         return None

@@ -102,7 +102,7 @@ CREATE TABLE subscriber_genre_assignment(
     subscriber_genre_assignment_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     subscriber_id INT,
     genre_id INT,
-    FOREIGN KEY (subscriber_id) REFERENCES subscriber (subscriber_id),
+    FOREIGN KEY (subscriber_id) REFERENCES subscriber (subscriber_id) ON DELETE CASCADE,
     FOREIGN KEY (genre_id) REFERENCES genre (genre_id)
 );
 

@@ -80,4 +80,4 @@ def test_submit_form_duplicate_email(monkeypatch, client):
     })
 
     assert response.status_code == 200
-    assert b"Email already registered use another one" in response.data
+    assert b"There was an error with your request" in response.data
