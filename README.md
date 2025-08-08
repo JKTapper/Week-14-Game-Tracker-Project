@@ -1,18 +1,21 @@
 # Week-14-Game-Tracker-Project
 
 ## Project introduction
+
 A data pipeline that tracks new releases on major PC platforms, helping game discovery and building an understanding of what is currently being released.
 Scraped new releases from Steam, Epic and GOG before adding supplementary data from their respective backend APIs.
 Data included the URL, title and release date, along with price, genres, developers and publishers etc.
 We planned and implemented an ELT pipeline to store clean data on new releases:
+
 - Website/API to S3 - scrape new releases & add data from the API before storing this raw data in an S3 buckets
 - S3 to RDS - transform raw data and upload to the RDS which supplies the dashboard with its data
-We developed a dashboard to showcase insights about recent releases - this is currently hosted at (here)[http://35.179.94.130:8501/].
+  We developed a dashboard to showcase insights about recent releases - this is currently hosted at (here)[http://35.179.94.130:8501/].
 
-We also created a subscriber system that involves a form - users can input their email and opt in to receive weekly reports and/or notifications - this is currently hosted (here)[http://18.168.201.236:8000/].
+We also created a subscriber system that involves a form - users can input their email and opt in to receive weekly reports and/or notifications - this is currently hosted (here)[http://3.9.178.245:8000/].
 on their favourite genres.
 
 ## Technologies used
+
 1. ECR - Docker images
 2. Lambda to run pipelines
 3. ECS/Fargate to host the dashboard and subscriber form
@@ -24,28 +27,30 @@ on their favourite genres.
 9. EventBridge Scheduler for scheduling the pipelines and reports
 
 ## File structures
+
 - .github
-    - Utility folder used for github configs
+  - Utility folder used for github configs
 - assets
-    - Folder containing project-related diagrams, including the ERD and architecture
+  - Folder containing project-related diagrams, including the ERD and architecture
 - src
-    - dashboard
-        - Folder to store scripts used in the dashboard, and one test file
-    - elt_pipeline
-        - Folder to store scripts used in each pipeline
-    - schema
-        - Folder containing the schema script for the database, and a python script to run said schema
-    - summary_report
-        - Folder to store scripts used to generate weekly reports
-    - terraform
-        - persistent
-            - Contains terraform scripts for one-time setups e.g. databases and container repos
-        - repeated
-            - Contains terraform scripts for repeated setups (when debugging is required) e.g. lambda functions
+  - dashboard
+    - Folder to store scripts used in the dashboard, and one test file
+  - elt_pipeline
+    - Folder to store scripts used in each pipeline
+  - schema
+    - Folder containing the schema script for the database, and a python script to run said schema
+  - summary_report
+    - Folder to store scripts used to generate weekly reports
+  - terraform
+    - persistent
+      - Contains terraform scripts for one-time setups e.g. databases and container repos
+    - repeated
+      - Contains terraform scripts for repeated setups (when debugging is required) e.g. lambda functions
 - tests
-    - Contains testing scripts for each module
+  - Contains testing scripts for each module
 
 ## How to run
+
 1. Install Python 3 on your system
 2. Run `python3 -m venv .venv` to make a new virtual environment
 3. Run `activate .venv/bin/activate` to enter the venv
@@ -61,9 +66,11 @@ These should be stored in a .env in the same folder as the scripts for running l
 Or the RDS creds should be stored in a `terraform.tfvars` file in `src/terraform/repeated` for deployment.
 
 ## Future improvements
-- 
+
+-
 
 ## Extra resources
+
 (Steam latest releases for scraping)[https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english]
 (Unofficial docs for requesting more data for a given store page App ID)[https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details]
 (Epic API)[https://dev.epicgames.com/docs/api-ref]

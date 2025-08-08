@@ -43,64 +43,73 @@ def get_sub_notifications() -> pd.DataFrame:
     connection = connect_to_rds()
     with connection.begin() as conn:
         return pd.read_sql("""
-            SELECT g.genre_name, game_name, release_date, subscriber_email 
+            SELECT g.genre_name, game_name, game_url, image_url, release_date, subscriber_email 
             FROM game
             JOIN genre_assignment ga ON ga.game_id = game.game_id
             JOIN subscriber_genre_assignment sga ON sga.genre_id = ga.genre_id 
             JOIN subscriber s ON s.subscriber_id = sga.subscriber_id
             JOIN genre g ON g.genre_id = ga.genre_id
             WHERE s.email_notifications = true
-            AND release_date >= NOW() - INTERVAL '1 days';
+            AND release_date >= NOW() - INTERVAL '72 hours';
         """, conn)
 
-
-
-def make_html(df:pd.DataFrame) -> str:
+def make_html(df: pd.DataFrame) -> str:
     """
-    Parses an html string
+    Converts game_name into clickable links using game_url,
+    and renders an HTML table with styling.
     """
+
     return f"""
-            <html>
-            <head>
-                <style>
-                    body {{
-                        font-family: Arial, sans-serif;
-                        background-color: #f4f4f4;
-                        color: #333;
-                        padding: 20px;
-                    }}
-                    h2 {{
-                        color: #ff6600;
-                    }}
-                    table {{
-                        width: 100%;
-                        border-collapse: collapse;
-                        background-color: #fff;
-                    }}
-                    th, td {{
-                        border: 1px solid #ddd;
-                        padding: 8px;
-                        text-align: left;
-                    }}
-                    th {{
-                        background-color: #ff6600;
-                        color: white;
-                    }}
-                    tr:nth-child(even) {{
-                        background-color: #f9f9f9;
-                    }}
-                </style>
-            </head>
-            <body>
-                <h2>🎮 New Game Releases in Your Favourite Genres</h2>
-                {df.to_html(index=False, escape=False)}
-                <p>Thanks for subscribing to Game Tracker!</p>
-            </body>
-            </html>
-        """
-
-
-
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    color: #333;
+                    padding: 20px;
+                }}
+                h2 {{
+                    color: #ff6600;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    background-color: #fff;
+                }}
+                th, td {{
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                }}
+                th {{
+                    background-color: #ff6600;
+                    color: white;
+                }}
+                tr:nth-child(even) {{
+                    background-color: #f9f9f9;
+                }}
+                a {{
+                    color: #ff6600;
+                    text-decoration: none;
+                }}
+                a:hover {{
+                    text-decoration: underline;
+                }}
+                .centered-img {{
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+            }}
+            </style>
+        </head>
+        <body>
+            <h2>🎮 New Game Releases in Your Favourite Genres</h2>
+            {df.to_html(index=False, escape=False)}
+            <p>Thanks for subscribing to Game Tracker!</p>
+        </body>
+        </html>
+    """
 
 
 def handler(event, context):
@@ -114,6 +123,11 @@ def handler(event, context):
 
     for email in emails:
         email_df = data[data['subscriber_email'] == email]
+
+        # Create clickable links in the 'game_name' column
+        email_df["game_name"] = email_df.apply(
+            lambda row: f'<a href="{row["game_url"]}" target="_blank">{row["game_name"]}</a> <br> <img src="{row["image_url"]}" width="150" height="100" class="centered-img">', axis=1
+        )
         
         # Group by genre so that result is in form {genre1:[game1, game2, game3]}
         grouped = email_df.groupby('genre_name')['game_name'].apply(list).to_dict()
@@ -156,5 +170,3 @@ def handler(event, context):
         'statusCode': 200,
         'body': json.dumps("Emails Sent Successfully")
     }
-
-

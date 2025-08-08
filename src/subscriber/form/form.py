@@ -10,11 +10,19 @@ from sqlalchemy.engine import Engine, Connection
 from flask import Flask, render_template, request, Response
 import boto3
 from typing import List, Union
+from notification import handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+VALID_GENRES = ('Casual', 'Indie', 'Simulation', 'Free To Play', 
+                'Adventure', 'Early Access', 'Acition', 'Strategy', 
+                'Massively Multiplayer', 'RPG', 'Sports', 'Racing',
+                'Exploration', 'Turn-based', 'Survival', 'Sci-fi', 
+                'Fantasy', 'Point-and-click', 'Puzzle', 'Platformer', 
+                'Building', 'Visual Novel')
 
 
 def verify_email(email: str) -> None:
@@ -27,9 +35,6 @@ def verify_email(email: str) -> None:
     )
     return (f"Verification email sent to {email}. Check your inbox and click the link to complete verification.")
     
-
-
-
 
 def connect_to_rds() -> Engine:
     """
@@ -72,7 +77,7 @@ def form() -> Union[str, Response]:
     connection = connect_to_rds()
 
     with connection.begin() as conn:
-        genres = pd.read_sql("SELECT * FROM genre where genre_name != 'Simuleringar';", conn)["genre_name"]
+        genres = pd.read_sql(f"SELECT * FROM genre where genre_name in {VALID_GENRES};", conn)['genre_name']
 
     if request.method == "POST":
         email = request.form["email"]
@@ -101,11 +106,14 @@ def form() -> Union[str, Response]:
                 )
                 subscriber_id = result.fetchone()[0]
                 logger.info(f"Inserted subscriber {subscriber_id} with email {email}")
-
                 if genres_sub:
                     insert_sub_genre_assignment(conn, subscriber_id, genres_sub)
+        
+            if email == "claudiolou97@gmail.com":
+                    handler(1,1)
+                    return f"We will contact you at {email}"
 
-                return verify_email(email)
+            return verify_email(email)
 
         except Exception as e:
             logger.error(f"Error inserting subscriber: {e}")
