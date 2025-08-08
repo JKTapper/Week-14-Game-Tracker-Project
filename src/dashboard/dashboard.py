@@ -33,8 +33,8 @@ GENRE_SELECTION = f"""AND genre_name IN('{"', '".join(genre_options)}')""" if 'a
 
 FILTER_STATEMENT = f"""
 WITH filtered_games AS (SELECT game_name,game_id,price,currency,store_id,release_date
-FROM game JOIN store USING(store_id) JOIN genre_assignment USING(game_id)
-JOIN genre USING(genre_id)
+FROM game JOIN store USING(store_id) LEFT JOIN genre_assignment USING(game_id)
+LEFT JOIN genre USING(genre_id)
 WHERE store_name IN ('{"','".join(store_options)}')
 """ + GENRE_SELECTION + """
 GROUP BY game_name,game_id,price,currency,store_id,release_date)"""
