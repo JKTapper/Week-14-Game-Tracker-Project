@@ -3,6 +3,13 @@ div{
     place-items: center;
 }
 
+img {
+    display: block;
+    float: right;
+    margin-right: 50px;
+    margin-top: 25px;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Exo+2&display=swap');
 
 html,

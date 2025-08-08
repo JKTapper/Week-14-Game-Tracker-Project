@@ -1,5 +1,5 @@
 """
-This module contains visualisation and metric functions for the Game Tracker Weekly Report
+This module contains visualisation and metric functions for the Game Tracker Weekly Report.
 """
 import pandas as pd
 import altair as alt
@@ -10,7 +10,7 @@ DAY_RANGE = 7
 
 def find_mean_price() -> str:
     """Finds and returns the mean price of all games released in the last given day range"""
-    query = """
+    query = f"""
             SELECT AVG(price) as avg_price
             FROM game
             WHERE price > 0
@@ -55,7 +55,7 @@ def find_new_release_count(day_range):
 
 def find_free_count():
     """Finds and returns the number of free games released in the last given day range"""
-    query = """
+    query = f"""
             SELECT count(price) as free_count
             FROM game
             WHERE price = 0
@@ -71,7 +71,7 @@ def find_free_count():
 
 def count_releases_by_day():
     """Creates a line chart showing the number of releases per day in the last given day range"""
-    query = """
+    query = f"""
             SELECT
             release_date
             FROM game
@@ -90,14 +90,19 @@ def count_releases_by_day():
         x=alt.X('release_date:T', title='Release Date'),
         y=alt.Y('count:Q', title='Number of Releases'),
         tooltip=['release_date:T', 'count']
+    ).properties(
+        width=400,
+        height=200
     ).interactive()
+
+    release_count_line_graph.save('/tmp/release_count_line_graph.png')
 
     return release_count_line_graph
 
 
 def most_common_genres():
     """Creates a bar chart showing the 5 most common genres in the last given day range"""
-    query = """
+    query = f"""
             SELECT
             genre.genre_name
             FROM game
@@ -117,16 +122,18 @@ def most_common_genres():
         color=alt.Color('genre_name:N', legend=None),
         tooltip=['genre_name', 'count']
     ).properties(
-        width=600,
-        height=300
+        width=400,
+        height=200
     ).interactive()
+
+    genre_bar_chart.save('/tmp/genre_bar_chart.png')
 
     return genre_bar_chart
 
 
 def price_distribution_histogram():
     """Creates a histogram showing the price of paid games released in the last given day range"""
-    query = """
+    query = f"""
             SELECT price
             FROM game
             WHERE price > 0
@@ -145,6 +152,11 @@ def price_distribution_histogram():
             alt.Tooltip('count()', title='Number of games'),
             alt.Tooltip('price:Q', bin=True, title='Price range')
         ]
+    ).properties(
+        width=400,
+        height=200
     ).interactive()
+
+    hist_chart.save('/tmp/hist_chart.png')
 
     return hist_chart
