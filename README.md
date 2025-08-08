@@ -61,7 +61,10 @@ These should be stored in a .env in the same folder as the scripts for running l
 Or the RDS creds should be stored in a `terraform.tfvars` file in `src/terraform/repeated` for deployment.
 
 ## Future improvements
-- 
+- More storefronts
+- Player counts from more sources
+- Twitch viewer counts
+- Review scores
 
 ## Extra resources
 [Steam latest releases for scraping](https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english)
