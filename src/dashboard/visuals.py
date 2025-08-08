@@ -129,7 +129,7 @@ def most_common_genres(filter_with_statement: str):
     st.altair_chart(bar_chart, use_container_width=True)
 
 
-PRICE_BUCKET_STARTS = [0, 3, 5, 10, 20, 30, 40]
+PRICE_BUCKET_STARTS = [0, 10, 20, 30, 40]
 
 
 def convert_price_cutoffs_to_buckets(price_cutoffs: list) -> list:
