@@ -100,7 +100,7 @@ def count_releases_by_day(filter_with_statement: str):
     st.altair_chart(line_chart, use_container_width=True)
 
 
-def most_common_genres(filter_with_statement: str):
+def most_common_genres(filter_with_statement: str, genre_options: list):
     """Creates a bar chart showing the 5 most common genres by querying the the database"""
     query = filter_with_statement + """
             SELECT
@@ -112,7 +112,8 @@ def most_common_genres(filter_with_statement: str):
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
-
+    if 'all' not in genre_options:
+        game_df = game_df[~game_df['genre_name'].isin(genre_options)]
     genre_counts = game_df['genre_name'].value_counts().head(
         5).reset_index(name='count')
     genre_counts.columns = ['genre_name', 'count']
