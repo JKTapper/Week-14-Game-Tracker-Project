@@ -339,4 +339,4 @@ async def player_counts_graph():
     app_id, max_players = most_played
     game_name = game_map.get(app_id, "Unknown")
 
-    return f"""🎮 Most played newly released game: **{game_name}** with **{max_players:,}** players over the last 24 hours"""
+    return f"""🎮 Most popular new game: **{game_name}** with **{max_players:,}** players"""
