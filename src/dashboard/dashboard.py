@@ -10,13 +10,12 @@ from visuals import count_releases_by_day, most_common_genres, price_distributio
 from database import fetch_game_data
 
 LOGO = "https://github.com/JKTapper/Week-14-Game-Tracker-Project/blob/main/assets/logo.png?raw=true"
-TITLE = "https://raw.githubusercontent.com/JKTapper/Week-14-Game-Tracker-Project/b47043c08a1bd20f120a5141c4c3049ed765280f/assets/title.png"
+TITLE = "https://raw.githubusercontent.com/JKTapper/Week-14-Game-Tracker-Project/a2fa5228b3b646783a95318f214fec7e47981919/assets/final_title.png"
 
 st.set_page_config(page_title="Game Tracker Dashboard",
                    page_icon="🎮")
 
 st.image(TITLE)
-st.title("🎮 GameTracker")
 
 stores = fetch_game_data("SELECT store_name FROM store")['store_name'].unique()
 genres = fetch_game_data("SELECT genre_name FROM genre")['genre_name'].unique()
@@ -24,7 +23,7 @@ genres = fetch_game_data("SELECT genre_name FROM genre")['genre_name'].unique()
 with st.sidebar:
 
     st.logo(LOGO, size="large")
-    st.image(LOGO)
+    # st.image(LOGO)
     st.title("Filters:")
     with st.expander("Stores", True):
         store_options = st.multiselect(
