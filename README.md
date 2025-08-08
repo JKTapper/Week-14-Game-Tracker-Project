@@ -64,7 +64,7 @@ Or the RDS creds should be stored in a `terraform.tfvars` file in `src/terraform
 - 
 
 ## Extra resources
-(Steam latest releases for scraping)[https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english]
-(Unofficial docs for requesting more data for a given store page App ID)[https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details]
-(Epic API)[https://dev.epicgames.com/docs/api-ref]
-(GOG API)[https://gogapidocs.readthedocs.io/en/latest/]
+[Steam latest releases for scraping](https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english)
+[Unofficial docs for requesting more data for a given store page App ID](https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details)
+[Unofficial Epic API](https://epicstore-api.readthedocs.io/en/latest/index.html)
+[GOG latest releases]( https://www.gog.com/en/games/new)
