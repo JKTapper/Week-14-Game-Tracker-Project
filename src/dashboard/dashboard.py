@@ -18,7 +18,12 @@ st.set_page_config(page_title="Game Tracker Dashboard",
 st.image(TITLE)
 
 stores = fetch_game_data("SELECT store_name FROM store")['store_name'].unique()
-genres = fetch_game_data("SELECT genre_name FROM genre")['genre_name'].unique()
+genres = fetch_game_data(
+    """SELECT genre_name FROM game
+    JOIN genre_assignment USING(game_id)
+    JOIN genre USING(genre_id)"""
+).value_counts(
+    'genre_name').index
 
 
 with st.sidebar:
@@ -36,8 +41,8 @@ with st.sidebar:
     with st.expander("Genres", True):
         genre_options = st.multiselect(
             "Genres",
-            genres,
-            genres
+            ['all'] + list(genres)[:15],
+            ['all']
         )
 
 GENRE_SELECTION = f"""AND genre_name IN('{"', '".join(genre_options)}')""" if 'all' not in genre_options else ''
