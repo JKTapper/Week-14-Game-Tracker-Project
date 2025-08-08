@@ -20,6 +20,7 @@ st.image(TITLE)
 stores = fetch_game_data("SELECT store_name FROM store")['store_name'].unique()
 genres = fetch_game_data("SELECT genre_name FROM genre")['genre_name'].unique()
 
+
 with st.sidebar:
 
     st.logo(LOGO, size="large")
@@ -39,12 +40,14 @@ with st.sidebar:
             genres
         )
 
+GENRE_SELECTION = f"""AND genre_name IN('{"', '".join(genre_options)}')""" if 'all' not in genre_options else ''
+
 FILTER_STATEMENT = f"""
 WITH filtered_games AS (SELECT game_name,game_id,price,currency,store_id,release_date
-FROM game JOIN store USING(store_id) JOIN genre_assignment USING(game_id)
-JOIN genre USING(genre_id)
+FROM game JOIN store USING(store_id) LEFT JOIN genre_assignment USING(game_id)
+LEFT JOIN genre USING(genre_id)
 WHERE store_name IN ('{"','".join(store_options)}')
-AND genre_name IN ('{"','".join(genre_options)}')
+""" + GENRE_SELECTION + """
 GROUP BY game_name,game_id,price,currency,store_id,release_date)"""
 
 col1, col2 = st.columns(2)
