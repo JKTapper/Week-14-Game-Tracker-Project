@@ -44,3 +44,5 @@ altair
 flask
 sqlalchemy
 epicstore_api
+asyncio
+aiohttp
