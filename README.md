@@ -7,9 +7,9 @@ Data included the URL, title and release date, along with price, genres, develop
 We planned and implemented an ELT pipeline to store clean data on new releases:
 - Website/API to S3 - scrape new releases & add data from the API before storing this raw data in an S3 buckets
 - S3 to RDS - transform raw data and upload to the RDS which supplies the dashboard with its data
-We developed a dashboard to showcase insights about recent releases - this is currently hosted at (here)[http://18.175.196.233:8501/].
+We developed a dashboard to showcase insights about recent releases - this is currently hosted at (here)[http://13.42.63.161:8501/].
 
-We also created a subscriber system that involves a form - users can input their email and opt in to receive weekly reports and/or notifications - this is currently hosted (here)[http://18.168.201.236:8000/].
+We also created a subscriber system that involves a form - users can input their email and opt in to receive weekly reports and/or notifications - this is currently hosted (here)[http://3.9.178.245:8000/].
 on their favourite genres.
 
 ## Technologies used
