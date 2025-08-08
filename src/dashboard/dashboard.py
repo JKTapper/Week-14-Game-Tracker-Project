@@ -9,25 +9,35 @@ from visuals import count_releases_by_day, most_common_genres, price_distributio
     average_price_by_platform
 from database import fetch_game_data
 
+LOGO = "https://github.com/JKTapper/Week-14-Game-Tracker-Project/blob/main/assets/logo.png?raw=true"
+TITLE = "https://raw.githubusercontent.com/JKTapper/Week-14-Game-Tracker-Project/a2fa5228b3b646783a95318f214fec7e47981919/assets/final_title.png"
 
 st.set_page_config(page_title="Game Tracker Dashboard",
                    page_icon="🎮")
-st.title("🎮 New Games Tracker")
+
+st.image(TITLE)
 
 stores = fetch_game_data("SELECT store_name FROM store")['store_name'].unique()
 genres = fetch_game_data("SELECT genre_name FROM genre")['genre_name'].unique()
 
-store_options = st.multiselect(
-    "Stores",
-    stores,
-    stores
-)
+with st.sidebar:
 
-genre_options = st.multiselect(
-    "Genres",
-    genres,
-    genres
-)
+    st.logo(LOGO, size="large")
+    # st.image(LOGO)
+    st.title("Filters:")
+    with st.expander("Stores", True):
+        store_options = st.multiselect(
+            "Stores",
+            stores,
+            stores
+        )
+
+    with st.expander("Genres", True):
+        genre_options = st.multiselect(
+            "Genres",
+            genres,
+            genres
+        )
 
 FILTER_STATEMENT = f"""
 WITH filtered_games AS (SELECT game_name,game_id,price,currency,store_id,release_date
