@@ -4,6 +4,8 @@ This module contains visualisation and metric functions for the Game Tracker Das
 import pandas as pd
 import streamlit as st
 import altair as alt
+import asyncio
+import aiohttp
 from database import fetch_game_data
 
 
@@ -313,3 +315,28 @@ def genre_combinations(filter_with_statement):
     )
 
     st.altair_chart(heatmap)
+
+
+async def get_steam_player_count(app_id: int, session: aiohttp.ClientSession):
+    url = f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={app_id}"
+    async with session.get(url) as response:
+        data = await response.json()
+        return app_id, data['response'].get('player_count', 0)
+
+
+async def player_counts_graph():
+    """Finds the game with the highest number of current Steam players"""
+    query = """SELECT game_name, app_id FROM game WHERE store_id = 1"""
+    app_id_df = fetch_game_data(query)
+    app_ids = app_id_df["app_id"].tolist()
+    game_map = dict(zip(app_id_df["app_id"], app_id_df["game_name"]))
+
+    async with aiohttp.ClientSession() as session:
+        tasks = [get_steam_player_count(app_id, session) for app_id in app_ids]
+        results = await asyncio.gather(*tasks)
+
+    most_played = max(results, key=lambda x: x[1])
+    app_id, max_players = most_played
+    game_name = game_map.get(app_id, "Unknown")
+
+    return f"""🎮 Most played newly released game: **{game_name}** with **{max_players:,}** players over the last 24 hours"""
