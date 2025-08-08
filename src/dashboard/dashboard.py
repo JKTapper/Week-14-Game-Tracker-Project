@@ -13,20 +13,17 @@ LOGO = "https://github.com/JKTapper/Week-14-Game-Tracker-Project/blob/main/asset
 
 st.set_page_config(page_title="Game Tracker Dashboard",
                    page_icon="🎮")
-st.title("🎮 New Games Tracker")
+
+st.image()
+st.title("🎮 GameTracker")
 
 stores = fetch_game_data("SELECT store_name FROM store")['store_name'].unique()
 genres = fetch_game_data("SELECT genre_name FROM genre")['genre_name'].unique()
 
-
-# st.image(LOGO, output_format="auto",
-#          use_container_width=False, clamp=False, caçtion=None, channels="RGB", width=100)
-
-
 with st.sidebar:
 
     st.logo(LOGO, size="large")
-
+    st.image(LOGO)
     st.title("Filters:")
     with st.expander("Stores", True):
         store_options = st.multiselect(
