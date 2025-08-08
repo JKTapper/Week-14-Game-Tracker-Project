@@ -9,7 +9,7 @@ We planned and implemented an ELT pipeline to store clean data on new releases:
 
 - Website/API to S3 - scrape new releases & add data from the API before storing this raw data in an S3 buckets
 - S3 to RDS - transform raw data and upload to the RDS which supplies the dashboard with its data
-  We developed a dashboard to showcase insights about recent releases - this is currently hosted at (here)[http://35.179.94.130:8501/].
+We developed a dashboard to showcase insights about recent releases - this is currently hosted at (here)[http://13.42.63.161:8501/].
 
 We also created a subscriber system that involves a form - users can input their email and opt in to receive weekly reports and/or notifications - this is currently hosted (here)[http://3.9.178.245:8000/].
 on their favourite genres.
@@ -66,12 +66,16 @@ These should be stored in a .env in the same folder as the scripts for running l
 Or the RDS creds should be stored in a `terraform.tfvars` file in `src/terraform/repeated` for deployment.
 
 ## Future improvements
-
--
+- More storefronts
+- Player counts from more sources
+- Twitch viewer counts
+- Review scores
 
 ## Extra resources
+[Steam latest releases for scraping](https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english)
 
-(Steam latest releases for scraping)[https://store.steampowered.com/search/?sort_by=Released_DESC&supportedlang=english]
-(Unofficial docs for requesting more data for a given store page App ID)[https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details]
-(Epic API)[https://dev.epicgames.com/docs/api-ref]
-(GOG API)[https://gogapidocs.readthedocs.io/en/latest/]
+[Unofficial docs for requesting more data for a given store page App ID](https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details)
+
+[Unofficial Epic API](https://epicstore-api.readthedocs.io/en/latest/index.html)
+
+[GOG latest releases]( https://www.gog.com/en/games/new)

@@ -2,19 +2,26 @@
 This module contains visualisation and metric functions for the Game Tracker Dashboard
 """
 import pandas as pd
-import numpy as np
 import streamlit as st
 import altair as alt
+import asyncio
+import aiohttp
 from database import fetch_game_data
 
 
-def find_mean_price() -> str:
+def find_mean_price(filter_with_statement: str) -> str:
     """Finds and returns the mean price of all games in the entire database"""
-    query = """
-            SELECT AVG(price) as avg_price
-            FROM game
-            where price > 0
-            AND currency = 'GBP'
+    query = filter_with_statement + """
+            ,converted_prices AS (SELECT game_id,
+            CASE
+                WHEN currency = 'GBP' THEN price
+                WHEN currency = 'USD' THEN price*0.75
+            END AS corrected_price FROM filtered_games
+            WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
+                )
+            SELECT
+            AVG(corrected_price) as avg_price FROM filtered_games
+            JOIN converted_prices USING(game_id)
             """
     with st.spinner("Fetching game data..."):
         price_df = fetch_game_data(query)
@@ -29,7 +36,7 @@ def find_mean_price() -> str:
     return average_price
 
 
-def find_new_release_count(day_range):
+def find_new_release_count(day_range, filter_with_statement: str):
     """
     Finds the number of games released in either the last 7 days or last 30 days
 
@@ -39,9 +46,9 @@ def find_new_release_count(day_range):
     Returns:
         A number representing the total number of games released in this time day_range
     """
-    query = f"""
+    query = filter_with_statement + f"""
             SELECT count(game_name) as game_count
-            FROM game
+            FROM filtered_games
             WHERE release_date >= NOW() - INTERVAL '{day_range} days'
             AND release_date <= CURRENT_DATE
             """
@@ -53,11 +60,11 @@ def find_new_release_count(day_range):
     return game_count
 
 
-def find_free_count():
+def find_free_count(filter_with_statement: str):
     """Finds and returns the number of free games in the entire database"""
-    query = """
+    query = filter_with_statement + """
             SELECT count(price) as free_count
-            FROM game
+            FROM filtered_games
             WHERE price = 0
             """
     with st.spinner("Fetching game data..."):
@@ -68,12 +75,12 @@ def find_free_count():
     return free_count
 
 
-def count_releases_by_day():
+def count_releases_by_day(filter_with_statement: str):
     """Creates a line chart showing the number of releases per day by querying the the database"""
-    query = """
+    query = filter_with_statement + """
             SELECT
-            release_date
-            FROM game
+            release_date, store_name
+            FROM filtered_games JOIN store USING(store_id)
             WHERE release_date >= '2025-07-31'
             AND release_date <= CURRENT_DATE
             """
@@ -95,18 +102,20 @@ def count_releases_by_day():
     st.altair_chart(line_chart, use_container_width=True)
 
 
-def most_common_genres():
+def most_common_genres(filter_with_statement: str, genre_options: list):
     """Creates a bar chart showing the 5 most common genres by querying the the database"""
-    query = """
+    query = filter_with_statement + """
             SELECT
-            genre.genre_name
-            FROM game
+            genre.genre_name, store_name
+            FROM filtered_games
             JOIN genre_assignment using (game_id)
             JOIN genre using (genre_id)
+            JOIN store USING(store_id)
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
-
+    if 'all' not in genre_options:
+        game_df = game_df[~game_df['genre_name'].isin(genre_options)]
     genre_counts = game_df['genre_name'].value_counts().head(
         5).reset_index(name='count')
     genre_counts.columns = ['genre_name', 'count']
@@ -123,36 +132,66 @@ def most_common_genres():
     st.altair_chart(bar_chart, use_container_width=True)
 
 
-def price_distribution_histogram():
+PRICE_BUCKET_STARTS = [0, 10, 20, 30, 40]
+
+
+def convert_price_cutoffs_to_buckets(price_cutoffs: list) -> list:
+    length = len(price_cutoffs)
+    return ['£' + str(price) + (
+        '+' if index == length else '-£' +
+        str(price_cutoffs[index])) for index, price in enumerate(
+            price_cutoffs, 1)]
+
+
+def convert_to_price_bucket(price: float, price_buckets: list):
+    """Takes a price and returns the bucket that price falls into"""
+    for index, num in enumerate(PRICE_BUCKET_STARTS, 1):
+        if num < price and (index == len(PRICE_BUCKET_STARTS)
+                            or price < PRICE_BUCKET_STARTS[index]):
+            return price_buckets[index-1]
+    return None
+
+
+def price_distribution_histogram(filter_with_statement: str):
     """Creates a histogram showing the price of paid games by querying the the database"""
-    query = """
-            SELECT price
-            FROM game
-            WHERE price > 0
-            AND currency = 'GBP'
+    query = filter_with_statement + """
+            SELECT store_name,
+            CASE
+                WHEN currency = 'GBP' THEN price
+                WHEN currency = 'USD' THEN price*0.75
+            END AS price
+            FROM filtered_games JOIN store USING(store_id)
+            WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
 
     price_df = game_df.dropna(subset=['price'])
     price_df['price'] = pd.to_numeric(price_df['price']/100, errors='coerce')
+    price_buckets = convert_price_cutoffs_to_buckets(PRICE_BUCKET_STARTS)
+    price_df['price_bucket'] = price_df['price'].apply(
+        lambda x: convert_to_price_bucket(x, price_buckets))
+    price_df = price_df.value_counts(['price_bucket']).reset_index()
+    total_games = price_df['count'].sum()
+    price_df['count'] = price_df['count'].apply(
+        lambda x: 100*x/total_games)
     hist_chart = alt.Chart(price_df).mark_bar().encode(
-        x=alt.X('price:Q', bin=alt.Bin(maxbins=10), title='Price (£)'),
-        y=alt.Y('count()', title='Number of Games'),
+        x=alt.X('price_bucket', title='Price (£)', sort=price_buckets),
+        y=alt.Y('count', title='Number of Games (%)'),
         tooltip=[
-            alt.Tooltip('count()', title='Number of games'),
-            alt.Tooltip('price:Q', bin=True, title='Price range')
+            alt.Tooltip('count', title='Number of games (%)'),
+            alt.Tooltip('price_bucket', title='Price range')
         ]
     ).interactive()
 
     st.altair_chart(hist_chart, use_container_width=True)
 
 
-def best_weekday():
+def best_weekday(filter_with_statement: str):
     """Creates a bar chart showing the number of games released on each weekday"""
-    query = """
+    query = filter_with_statement + """
             SELECT
-            release_date FROM game
+            release_date FROM filtered_games
             """
     with st.spinner("Fetching game data..."):
         game_df = fetch_game_data(query)
@@ -181,11 +220,11 @@ def best_weekday():
     st.altair_chart(bar_chart, use_container_width=True)
 
 
-def releases_by_store():
+def releases_by_store(filter_with_statement):
     '''Creates a pie chart showing the number of games released by each store recently'''
-    query = """
+    query = filter_with_statement + """
             SELECT game.store_id, store.store_name
-            FROM game
+            FROM filtered_games
             JOIN store USING (store_id)
             """
     with st.spinner("Fetching game data..."):
@@ -203,21 +242,30 @@ def releases_by_store():
     st.altair_chart(pie_chart, use_container_width=True)
 
 
-def average_price_by_platform():
+def average_price_by_platform(filter_with_statement: str):
     """Creates a bar chart showing the average price of games released on each platform"""
-    query = """
+    query = filter_with_statement + """
+            ,converted_prices AS (SELECT game_id,
+            CASE
+                WHEN currency = 'GBP' THEN price
+                WHEN currency = 'USD' THEN price*0.75
+            END AS corrected_price FROM filtered_games
+            WHERE price > 0 AND (currency = 'GBP' OR currency = 'USD')
+                )
             SELECT
-            AVG(price) as "Average price", store_name AS "Store" FROM game
-            JOIN store USING(store_id)
+            AVG(corrected_price) as average, store_name AS "Store" FROM filtered_games
+            JOIN store USING(store_id) JOIN converted_prices USING(game_id)
             GROUP BY store_name
             """
     with st.spinner("Fetching game data..."):
         avg_price_df = fetch_game_data(query)
+    avg_price_df['Average price (£)'] = avg_price_df['average'].apply(
+        lambda x: float(x)/100)
 
     bar_chart = alt.Chart(avg_price_df).mark_bar().encode(
-        x=alt.X('Store', title='Store', sort='-y'),
-        y=alt.Y('Average price', title='Average price'),
-        color=alt.Color('Average price', legend=None)
+        x=alt.X('Store', title='Store', sort=avg_price_df['average']),
+        y=alt.Y('Average price (£)', title='Average price (£)'),
+        color=alt.Color('Average price (£)', legend=None)
     ).properties(
         width=600,
         height=300
@@ -228,12 +276,12 @@ def average_price_by_platform():
 # genre combinations
 
 
-def genre_combinations():
+def genre_combinations(filter_with_statement):
     """Creates a heatmap showing which genres conincide with each other"""
-    query = """
+    query = filter_with_statement + """
             SELECT
             game_id ,genre_name AS "Genre"
-            FROM game
+            FROM filtered_games
             JOIN genre_assignment USING(game_id)
             JOIN genre USING(genre_id)
             ORDER BY game_id,COUNT(*) OVER (PARTITION BY genre_id) desc, genre_name
@@ -253,13 +301,16 @@ def genre_combinations():
             current_game_id = game_id
         if genre in genres:
             for present_genre in current_games_genres:
-                genre_combination_frequencies[(present_genre, genre)] = genre_combination_frequencies.get(
+                genre_combination_frequencies[(
+                    present_genre,
+                    genre
+                )] = genre_combination_frequencies.get(
                     (present_genre, genre), 0) + 1
             current_games_genres.append(genre)
 
     source = pd.DataFrame({
-        'Genres - x': [genre_pair[0] for genre_pair in genre_combination_frequencies.keys()],
-        'Genres - y': [genre_pair[1] for genre_pair in genre_combination_frequencies.keys()],
+        'Genres - x': [genre_pair[0] for genre_pair in genre_combination_frequencies],
+        'Genres - y': [genre_pair[1] for genre_pair in genre_combination_frequencies],
         'frequency': genre_combination_frequencies.values()
     })
 
@@ -270,3 +321,28 @@ def genre_combinations():
     )
 
     st.altair_chart(heatmap)
+
+
+async def get_steam_player_count(app_id: int, session: aiohttp.ClientSession):
+    url = f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={app_id}"
+    async with session.get(url) as response:
+        data = await response.json()
+        return app_id, data['response'].get('player_count', 0)
+
+
+async def player_counts_graph():
+    """Finds the game with the highest number of current Steam players"""
+    query = """SELECT game_name, app_id FROM game WHERE store_id = 1"""
+    app_id_df = fetch_game_data(query)
+    app_ids = app_id_df["app_id"].tolist()
+    game_map = dict(zip(app_id_df["app_id"], app_id_df["game_name"]))
+
+    async with aiohttp.ClientSession() as session:
+        tasks = [get_steam_player_count(app_id, session) for app_id in app_ids]
+        results = await asyncio.gather(*tasks)
+
+    most_played = max(results, key=lambda x: x[1])
+    app_id, max_players = most_played
+    game_name = game_map.get(app_id, "Unknown")
+
+    return f"""🎮 Most popular new game: **{game_name}** with **{max_players:,}** players"""
