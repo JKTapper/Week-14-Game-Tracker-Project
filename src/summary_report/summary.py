@@ -1,7 +1,7 @@
 """This module assembles key game metrics and charts into a HTML report using weekly data."""
 
 from datetime import datetime
-from summary_visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
+from visuals import count_releases_by_day, most_common_genres, price_distribution_histogram, \
     find_mean_price, find_new_release_count, find_free_count, DAY_RANGE
 
 
@@ -18,7 +18,7 @@ def create_summary_html() -> str:
     html_content = f"""
     <html>
         <body>
-            <h1>New Games Tracker Weekly Report</h1>
+            <h1>New Game Tracker Weekly Report</h1>
             <p><i>Date: {report_date}</i></p>
 
             <h2>This Week's Key Stats</h2>
@@ -29,13 +29,13 @@ def create_summary_html() -> str:
             </ul>
 
             <h2>Recent Release Activity</h2>
-            <img src="cid:myimage1" alt="Releases by day line graph">
+            <img src="cid:release_count_graph" alt="Releases by day line graph">
 
             <h2>Most Common Genres</h2>
-            <img src="cid:myimage2" alt="Top 5 most common genres graph">
+            <img src="cid:genre_bar_chart" alt="Top 5 most common genres graph">
 
             <h2>Price Distribution of Paid Games</h2>
-            <img src="cid:myimage3" alt="Price distribution histogram">
+            <img src="cid:hist_chart" alt="Price distribution histogram">
         </body>
     </html>
     """
