@@ -74,7 +74,7 @@ count_releases_by_day(FILTER_STATEMENT)
 
 genre_heading = "Most Common Genres"
 if 'all' not in genre_options:
-    genre_heading = "Most common secondary genres"
+    genre_heading = "Most Common Secondary Genres"
 st.subheader(genre_heading)
 most_common_genres(FILTER_STATEMENT, genre_options)
 
