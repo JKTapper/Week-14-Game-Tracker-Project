@@ -3,14 +3,14 @@
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
+import os
+import json
+import logging
+import boto3
 from botocore.exceptions import ClientError
+import pandas as pd
 from summary import create_summary_html
 from database import fetch_game_data
-import pandas as pd
-import boto3
-import logging
-import json
-import os
 
 SOURCE_EMAIL = "gametrackerc18@gmail.com"
 
@@ -43,7 +43,7 @@ def send_report_email(ses_client, recipient_email: str, html_content: str):
         html_content: The HTML body of the email.
     """
     msg = MIMEMultipart('related')
-    msg['Subject'] = '🎮 New Games Tracker - Your Weekly Report!'
+    msg['Subject'] = '🎮 New Game Tracker - Your Weekly Report!'
     msg['From'] = SOURCE_EMAIL
     msg['To'] = recipient_email
 
@@ -62,15 +62,17 @@ def send_report_email(ses_client, recipient_email: str, html_content: str):
             with open(img_path, 'rb') as img:
                 mime_img = MIMEImage(img.read())
                 mime_img.add_header('Content-ID', f'<{cid}>')
+                mime_img.add_header('Content-Disposition',
+                                    'inline', filename=filename)
                 msg.attach(mime_img)
             logger.info("Successfully attached image %s", filename)
         except FileNotFoundError:
             logger.error(
                 "Image file not found at path: %s", img_path)
-            return False
+            return None
         except Exception as e:
             logger.error("Error attaching image %s: %s", filename, e)
-            return False
+            return None
 
     # Send the email using SES
     try:
@@ -84,12 +86,12 @@ def send_report_email(ses_client, recipient_email: str, html_content: str):
         error_code = e.response['Error']['Code']
         if error_code == 'MessageRejected':
             logger.error(
-                "Message rejected for %s. Recipient may need to verify their email.", recipient_email)
-            return False
-        else:
-            logger.error("Failed to send email to %s: [%s] %s",
-                         recipient_email, error_code, e.response['Error']['Message'])
-            return False
+                "Message rejected for %s. Recipient may need to verify their email.",
+                recipient_email)
+            return None
+        logger.error("Failed to send email to %s: [%s] %s",
+                     recipient_email, error_code, e.response['Error']['Message'])
+        return None
 
 
 def handler(event, context):  # pylint: disable=unused-argument
@@ -124,7 +126,7 @@ def handler(event, context):  # pylint: disable=unused-argument
     for email in emails:
         try:
             check_success = send_report_email(ses_client, email, html_content)
-            if check_success:
+            if not check_success:
                 success_count += 1
             else:
                 failure_count += 1
@@ -138,3 +140,6 @@ def handler(event, context):  # pylint: disable=unused-argument
         'statusCode': 200,
         'body': json.dumps({"message": final_message})
     }
+
+
+handler(1, 1)
