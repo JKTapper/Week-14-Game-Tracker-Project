@@ -352,6 +352,14 @@ resource "aws_iam_policy" "ses_verify_email_policy" {
           "ses:GetIdentityVerificationAttributes"
         ],
         Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail"
+        ],
+        Resource = "*"
       }
     ]
   })
@@ -505,7 +513,6 @@ resource "aws_iam_role_policy_attachment" "lambda_ses_attachment" {
   role       = aws_iam_role.lambda_exec_role_game_tracker_el.name
   policy_arn = aws_iam_policy.ses_send_email_policy.arn
 }
-
 
 
 
