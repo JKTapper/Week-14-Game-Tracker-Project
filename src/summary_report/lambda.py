@@ -1,6 +1,6 @@
 """AWS Lambda handler for the weekly game report."""
 
-from summary import create_summary_html
+from summary_report.summary_visuals import create_summary_html
 
 
 def handler(event, context):  # pylint: disable=unused-argument
