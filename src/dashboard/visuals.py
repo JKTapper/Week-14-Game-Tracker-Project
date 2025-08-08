@@ -129,20 +129,23 @@ def most_common_genres(filter_with_statement: str):
     st.altair_chart(bar_chart, use_container_width=True)
 
 
-PRICE_BUCKET_STARTS = [0, 10, 20, 30, 40]
+PRICE_BUCKET_STARTS = [0, 3, 5, 10, 20, 30, 40]
 
 
-def convert_to_price_bucket(price: float):
+def convert_price_cutoffs_to_buckets(price_cutoffs: list) -> list:
+    length = len(price_cutoffs)
+    return ['£' + str(price) + (
+        '+' if index == length else '-£' +
+        str(price_cutoffs[index])) for index, price in enumerate(
+            price_cutoffs, 1)]
+
+
+def convert_to_price_bucket(price: float, price_buckets: list):
     """Takes a price and returns the bucket that price falls into"""
     for index, num in enumerate(PRICE_BUCKET_STARTS, 1):
         if num < price and (index == len(PRICE_BUCKET_STARTS)
                             or price < PRICE_BUCKET_STARTS[index]):
-            display_range = '£' + str(num)
-            if index == len(PRICE_BUCKET_STARTS):
-                display_range += '+'
-            else:
-                display_range += '-£' + str(PRICE_BUCKET_STARTS[index])
-            return display_range
+            return price_buckets[index-1]
     return None
 
 
@@ -162,13 +165,15 @@ def price_distribution_histogram(filter_with_statement: str):
 
     price_df = game_df.dropna(subset=['price'])
     price_df['price'] = pd.to_numeric(price_df['price']/100, errors='coerce')
-    price_df['price_bucket'] = price_df['price'].apply(convert_to_price_bucket)
+    price_buckets = convert_price_cutoffs_to_buckets(PRICE_BUCKET_STARTS)
+    price_df['price_bucket'] = price_df['price'].apply(
+        lambda x: convert_to_price_bucket(x, price_buckets))
     price_df = price_df.value_counts(['price_bucket']).reset_index()
     total_games = price_df['count'].sum()
     price_df['count'] = price_df['count'].apply(
         lambda x: 100*x/total_games)
     hist_chart = alt.Chart(price_df).mark_bar().encode(
-        x=alt.X('price_bucket', title='Price (£)'),
+        x=alt.X('price_bucket', title='Price (£)', sort=price_buckets),
         y=alt.Y('count', title='Number of Games (%)'),
         tooltip=[
             alt.Tooltip('count', title='Number of games (%)'),
